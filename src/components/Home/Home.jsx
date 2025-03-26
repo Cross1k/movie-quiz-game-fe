@@ -8,6 +8,8 @@ const Home = () => {
 
   const [sessionId, setSessionId] = useState("");
 
+  const findURL = window.location.href;
+
   useEffect(() => {
     connectSocket();
     socket.on("home_page", (data) => {
@@ -23,14 +25,14 @@ const Home = () => {
     <>
       <QRCodeCanvas
         className={css.qrcode}
-        value={`http://192.168.3.6:5173/host/${sessionId}`}
+        value={`${findURL}host/${sessionId}`}
         size={400}
         session={sessionId}
       />
       {players.map((player) => (
         <QRCodeCanvas
           className={css.qrcode}
-          value={`http://192.168.3.6:5173/player/${player}/${sessionId}`}
+          value={`${findURL}player/${player}/${sessionId}`}
           key={player}
           size={200}
           number={player}
