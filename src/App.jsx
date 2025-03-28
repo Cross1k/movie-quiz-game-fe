@@ -15,6 +15,7 @@ const App = () => {
         <Route path="/player/:id/:session" element={<PlayerPage />} />
         <Route path="/host/:session" element={<HostPage />} />
         <Route path="/game/:session" element={<GamePage />} />
+        {/* <Route path="/game/:session/themes" element={<NotFoundPage />} /> */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>

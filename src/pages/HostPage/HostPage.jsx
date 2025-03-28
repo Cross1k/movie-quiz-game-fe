@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [themes, setThemes] = useState([]);
 
   const { session } = useParams();
 
@@ -16,6 +17,11 @@ export default function HostPage() {
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);
       setIsAnswering(true);
+    });
+
+    socket.emit("get_themes");
+    socket.on("themes_list", (themes) => {
+      setThemes(themes);
     });
 
     return () => {
@@ -48,6 +54,16 @@ export default function HostPage() {
           </>
         )}
       </div>
+      <h2>THEMES</h2>
+      {themes.length > 0 &&
+        themes.map((theme) => (
+          <button
+            key={theme.external_id}
+            onClick={() => socket.emit("select_theme", theme.path, session.id)}
+          >
+            {theme.name}
+          </button>
+        ))}
     </div>
   );
 }
