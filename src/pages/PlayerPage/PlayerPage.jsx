@@ -1,13 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import Modal from "react-modal";
+
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 
 export default function Player() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [playerName, setPlayerName] = useState(null);
   const [stateAnswer, setStateAnswer] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pts, setPts] = useState(0);
 
   const { id, session } = useParams();
+
+  const customStyles = {
+    content: {
+      top: "50%",
+      left: "50%",
+      right: "auto",
+      bottom: "auto",
+      marginRight: "-50%",
+      transform: "translate(-50%, -50%)",
+    },
+  };
 
   useEffect(() => {
     connectSocket();
@@ -17,18 +32,27 @@ export default function Player() {
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);
       setIsButtonDisabled(true);
+      setIsModalOpen(true);
     });
 
-    socket.on("broadcast_good_answer", () => {
-      setStateAnswer("Wright answer");
-      setIsButtonDisabled(false);
-      setPlayerName(null);
+    socket.on("show_logo", () => {
+      setStateAnswer("верно!");
+      setTimeout(() => {
+        setIsButtonDisabled(false);
+        setPlayerName(null);
+        setStateAnswer(null);
+        setIsModalOpen(false);
+      }, 5000);
     });
 
     socket.on("broadcast_bad_answer", () => {
-      setStateAnswer("Bad answer");
-      setIsButtonDisabled(false);
-      setPlayerName(null);
+      setStateAnswer("не верно!");
+      setTimeout(() => {
+        setIsButtonDisabled(false);
+        setPlayerName(null);
+        setStateAnswer(null);
+        setIsModalOpen(false);
+      }, 5000);
     });
     return () => {
       socket.off("broadcast_answer");
@@ -45,14 +69,14 @@ export default function Player() {
 
   return (
     <>
-      <h2>
-        Player {id}, game {session}
-      </h2>
+      <Modal style={customStyles} isOpen={isModalOpen}>
+        Отвечает {playerName} {stateAnswer && `- ${stateAnswer}`}
+      </Modal>
+      <h2>Команда {id}</h2>
       <button type="button" onClick={handleAnswer} disabled={isButtonDisabled}>
-        Give answer 🔔
+        Я знаю!!! 🔔
       </button>
-      {playerName !== null && <h3>{playerName}</h3>}
-      {stateAnswer !== null && <h3>{stateAnswer}</h3>}
+      {pts > 0 && <p>У нас {pts} очков</p>}
     </>
   );
 }

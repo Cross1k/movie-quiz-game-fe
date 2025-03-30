@@ -14,14 +14,19 @@ const Home = () => {
 
   useEffect(() => {
     connectSocket();
-    socket.on("home_page", (data) => {
-      setSessionId(String(data));
-    });
+    setTimeout(() => {
+      console.log("my id:", socket.id);
+
+      socket.emit("create_session", socket.id);
+      setSessionId(socket.id);
+      // socket.emit("join_room", socket.id);
+    }, 700);
+
     socket.on("broadcast_full_room", (room) => navigate(`/game/${room}`));
     return () => {
-      // socket.off("home_page");
+      socket.off("home_page");
       socket.off("broadcast_full_room");
-      // disconnectSocket();
+      disconnectSocket();
     };
   }, [navigate]);
 
@@ -29,14 +34,16 @@ const Home = () => {
     <>
       <QRCodeCanvas
         className={css.qrcode}
-        value={`192.168.3.6:5173/host/${sessionId}`}
+        // value={`${findURL}/host/${sessionId}`}
+        value={`http://192.168.88.73:5173/host/${sessionId}`}
         size={400}
         session={sessionId}
       />
       {players.map((player) => (
         <QRCodeCanvas
           className={css.qrcode}
-          value={`192.168.3.6:5173/player/${player}/${sessionId}`}
+          // value={`${findURL}/player/${player}/${sessionId}`}
+          value={`http://192.168.88.73:5173/player/${player}/${sessionId}`}
           key={player}
           size={200}
           number={player}
