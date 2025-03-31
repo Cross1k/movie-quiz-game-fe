@@ -29,6 +29,7 @@ export default function HostPage() {
     socket.emit("join_room", session);
 
     socket.on("broadcast_answer", (id) => {
+      console.log("Received answer:", id);
       setPlayerName(id);
       setIsAnswering(true);
     });
@@ -42,10 +43,14 @@ export default function HostPage() {
       });
     }, 700);
 
-    socket.on("send_game_page_id", (id) => {
+    socket.on("game_page_id", (id) => {
       console.log("Received game id:", id);
       setGamePageId(id);
     });
+
+    // socket.on("game_page_id", (gameId) => {
+    //   setGamePageId(gameId);
+    // });
 
     socket.emit("get_themes");
     socket.on("themes_list", (themes) => {
@@ -54,7 +59,7 @@ export default function HostPage() {
     return () => {
       socket.off("host_page_id_answer");
     };
-  }, [session]);
+  }, [hostId, session]);
 
   useEffect(() => {
     connectSocket();

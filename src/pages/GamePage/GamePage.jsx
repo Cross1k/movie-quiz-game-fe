@@ -61,7 +61,7 @@ export default function Themes() {
     socket.emit("join_room", session);
 
     setTimeout(() => {
-      socket.emit("game_page", socket.id);
+      socket.emit("game_page", session, socket.id);
     }, 500);
 
     socket.emit("get_themes");
@@ -97,12 +97,15 @@ export default function Themes() {
           setIsModalOpen(false);
           setSelectedFrame(0);
           setFrames([]);
-        }, 4000);
-      }, 5000);
+        }, 3000);
+      }, 3000);
       console.log("got logo");
     });
 
-    socket.on("all_points", (score) => setScoreTable(score));
+    socket.on("all_points", (score) => {
+      setScoreTable(score);
+      console.log(score);
+    });
 
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);

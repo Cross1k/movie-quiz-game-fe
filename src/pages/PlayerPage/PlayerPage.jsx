@@ -75,7 +75,7 @@ export default function Player() {
       socket.off("broadcast_good_answer");
       socket.off("broadcast_bad_answer");
     };
-  }, [session]);
+  }, [session, playerId]);
 
   useEffect(() => {
     connectSocket();
