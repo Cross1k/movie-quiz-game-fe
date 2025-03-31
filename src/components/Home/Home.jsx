@@ -35,7 +35,7 @@ const Home = () => {
       <QRCodeCanvas
         className={css.qrcode}
         // value={`${findURL}/host/${sessionId}`}
-        value={`http://192.168.88.73:5173/host/${sessionId}`}
+        value={`http://192.168.3.6:5173/host/${sessionId}`}
         size={400}
         session={sessionId}
       />
@@ -43,7 +43,7 @@ const Home = () => {
         <QRCodeCanvas
           className={css.qrcode}
           // value={`${findURL}/player/${player}/${sessionId}`}
-          value={`http://192.168.88.73:5173/player/${player}/${sessionId}`}
+          value={`http://192.168.3.6:5173/player/${player}/${sessionId}`}
           key={player}
           size={200}
           number={player}

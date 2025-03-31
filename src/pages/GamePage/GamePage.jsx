@@ -11,6 +11,7 @@ export default function Themes() {
   const [selectedFrame, setSelectedFrame] = useState(0);
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
+  const [scoreTable, setScoreTable] = useState(null);
 
   const { session } = useParams();
 
@@ -77,11 +78,17 @@ export default function Themes() {
 
     socket.on("change_frame", () => {
       setSelectedFrame(selectedFrame + 1);
-      console.log(selectedFrame);
     });
 
     socket.on("show_logo", () => {
       setPlayerAnswer("верно!");
+      socket.emit(
+        "send_points",
+        5 - selectedFrame,
+        session,
+        playerName,
+        socket.id
+      );
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
@@ -94,6 +101,8 @@ export default function Themes() {
       }, 5000);
       console.log("got logo");
     });
+
+    socket.on("all_points", (score) => setScoreTable(score));
 
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);
@@ -111,7 +120,7 @@ export default function Themes() {
       // socket.off("themes_list");
       disconnectSocket();
     };
-  }, [session, selectedFrame]);
+  }, [session, selectedFrame, playerName]);
 
   return (
     <div>
@@ -126,6 +135,20 @@ export default function Themes() {
             <img src={sortedUrls[selectedFrame]} />
           )}
         </Modal>
+      )}
+
+      {scoreTable && (
+        <>
+          <h2>Таблица результатов</h2>
+          <ul>
+            {scoreTable.map((player) => (
+              <li key={player.name}>
+                <h3>{player.name}</h3>
+                <h3>{player.score}</h3>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <h2>Выберите тему</h2>

@@ -9,7 +9,10 @@ export default function Player() {
   const [playerName, setPlayerName] = useState(null);
   const [stateAnswer, setStateAnswer] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pts, setPts] = useState(0);
+  const [myPoints, setMyPoints] = useState(0);
+  const [playerId, setPlayerId] = useState(
+    localStorage.getItem("playerId") || null
+  );
 
   const { id, session } = useParams();
 
@@ -25,9 +28,18 @@ export default function Player() {
   };
 
   useEffect(() => {
-    connectSocket();
-
     socket.emit("join_room", session);
+
+    setTimeout(() => {
+      console.log(socket.id);
+      socket.emit("player_page_id", socket.id, playerId);
+      socket.on("player_page_id_answer", (_id) => {
+        if (_id === playerId) return;
+        setPlayerId(_id);
+        localStorage.setItem("playerId", _id);
+        console.log(_id);
+      });
+    }, 500);
 
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);
@@ -45,6 +57,10 @@ export default function Player() {
       }, 5000);
     });
 
+    socket.on("your_points", (pts) => {
+      setMyPoints(pts);
+    });
+
     socket.on("broadcast_bad_answer", () => {
       setStateAnswer("не верно!");
       setTimeout(() => {
@@ -58,12 +74,18 @@ export default function Player() {
       socket.off("broadcast_answer");
       socket.off("broadcast_good_answer");
       socket.off("broadcast_bad_answer");
-      disconnectSocket();
     };
   }, [session]);
 
+  useEffect(() => {
+    connectSocket();
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
   const handleAnswer = () => {
-    socket.emit("give_answer", { session, id });
+    socket.emit("give_answer", session, id);
     setIsButtonDisabled(true);
   };
 
@@ -76,7 +98,7 @@ export default function Player() {
       <button type="button" onClick={handleAnswer} disabled={isButtonDisabled}>
         Я знаю!!! 🔔
       </button>
-      {pts > 0 && <p>У нас {pts} очков</p>}
+      <p>У нас {myPoints} очков</p>
     </>
   );
 }

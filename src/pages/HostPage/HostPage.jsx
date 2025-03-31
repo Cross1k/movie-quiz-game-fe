@@ -10,6 +10,7 @@ export default function HostPage() {
   const [gamePageId, setGamePageId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [disabledMovies, setDisabledMovies] = useState(new Set());
+  const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
 
   const { session } = useParams();
 
@@ -25,18 +26,21 @@ export default function HostPage() {
   };
 
   useEffect(() => {
-    connectSocket();
-
     socket.emit("join_room", session);
 
     socket.on("broadcast_answer", (id) => {
       setPlayerName(id);
       setIsAnswering(true);
     });
+
     setTimeout(() => {
       console.log(socket.id);
-      socket.emit("host_page_id", socket.id);
-    }, 500);
+      socket.emit("host_page_id", socket.id, hostId);
+      socket.on("host_page_id_answer", (_id) => {
+        setHostId(_id);
+        localStorage.setItem("hostId", _id);
+      });
+    }, 700);
 
     socket.on("send_game_page_id", (id) => {
       console.log("Received game id:", id);
@@ -47,11 +51,17 @@ export default function HostPage() {
     socket.on("themes_list", (themes) => {
       setThemes(themes);
     });
+    return () => {
+      socket.off("host_page_id_answer");
+    };
+  }, [session]);
 
+  useEffect(() => {
+    connectSocket();
     return () => {
       disconnectSocket();
     };
-  }, [session]);
+  }, []);
 
   const handleGoodAnswer = () => {
     socket.emit("show_logo", session);
