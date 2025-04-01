@@ -22,10 +22,8 @@ const Home = () => {
       // socket.emit("join_room", socket.id);
     }, 700);
 
-    socket.on("broadcast_full_room", (room) => navigate(`/game/${room}`));
+    socket.on("game_page", (room) => navigate(`/game/${room}`));
     return () => {
-      socket.off("home_page");
-      socket.off("broadcast_full_room");
       disconnectSocket();
     };
   }, [navigate]);

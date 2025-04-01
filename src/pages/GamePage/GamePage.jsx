@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useParams } from "react-router-dom";
 import Modal from "react-modal";
-// import { useNavigate } from "react-router-dom";
 
 export default function Themes() {
   const [themes, setThemes] = useState([]);
@@ -12,6 +11,11 @@ export default function Themes() {
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
   const [scoreTable, setScoreTable] = useState(null);
+  const [gameId, setGameId] = useState(localStorage.getItem("gameId") || null);
+  const [winnerName, setWinnerName] = useState(null);
+  const [winnerScore, setWinnerScore] = useState(null);
+  const [equalPlayers, setEqualPlayers] = useState(null);
+  const [gameEnd, setGameEnd] = useState(false);
 
   const { session } = useParams();
 
@@ -58,10 +62,15 @@ export default function Themes() {
   useEffect(() => {
     connectSocket();
 
-    socket.emit("join_room", session);
+    // socket.emit("game_page_id", session, socket.id);
 
     setTimeout(() => {
-      socket.emit("game_page", session, socket.id);
+      console.log(socket.id);
+      socket.emit("game_page_id", session, socket.id, gameId);
+      socket.on("game_page_id_answer", (_id) => {
+        setGameId(_id);
+        localStorage.setItem("gameId", _id);
+      });
     }, 500);
 
     socket.emit("get_themes");
@@ -119,11 +128,20 @@ export default function Themes() {
       }, 4000);
     });
 
+    socket.on("game_ended", (data) => {
+      setWinnerName(data.name);
+      setWinnerScore(data.score);
+      setGameEnd(true);
+    });
+
+    socket.on("game_ended_tie", (data) => {
+      setEqualPlayers(data);
+    });
+
     return () => {
-      // socket.off("themes_list");
       disconnectSocket();
     };
-  }, [session, selectedFrame, playerName]);
+  }, [session, selectedFrame, playerName, gameId]);
 
   return (
     <div>
@@ -139,7 +157,28 @@ export default function Themes() {
           )}
         </Modal>
       )}
+      <Modal isOpen={gameEnd} style={customStyles}>
+        {winnerName && (
+          <>
+            <h2> Победили {winnerName}</h2>
 
+            <h3>Счет: {winnerScore}</h3>
+          </>
+        )}
+        {equalPlayers && (
+          <>
+            <h2>Ничья!</h2>
+            <ul>
+              {equalPlayers.map((player) => (
+                <li key={player.name}>
+                  <h3>{player.name}</h3>
+                  <h3>{player.score}</h3>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Modal>
       {scoreTable && (
         <>
           <h2>Таблица результатов</h2>
@@ -155,19 +194,21 @@ export default function Themes() {
       )}
 
       <h2>Выберите тему</h2>
-      {themes.length > 0 && (
+      {themes != null && (
         <ul>
-          {themes.map((theme) => (
-            <li key={theme.theme}>
-              {theme.theme}
+          {Object.keys(themes).map((theme) => (
+            <li key={theme}>
+              {theme}
               <ul>
-                {theme.movies.map((movie) => (
+                {themes[theme].movies.map((movie) => (
                   <li key={movie.index}>
                     <button
                       onClick={(e) => {
                         console.log(e.target.disabled);
                       }}
-                    >{`${movie.index + 1}`}</button>
+                    >
+                      {!movie.guessed ? `${movie.index + 1}` : `${movie.name}`}
+                    </button>
                   </li>
                 ))}
               </ul>
