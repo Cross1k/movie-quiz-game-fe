@@ -9,7 +9,6 @@ export default function HostPage() {
   const [themes, setThemes] = useState(null);
   const [gamePageId, setGamePageId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [disabledMovies, setDisabledMovies] = useState(new Set());
   const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
 
   const { session } = useParams();
@@ -25,20 +24,25 @@ export default function HostPage() {
     },
   };
 
-  useEffect(() => {
-    connectSocket();
-    // socket.emit("host_page_id", session);
+  let count = 0;
 
-    socket.on("broadcast_answer", (playerName) => {
-      console.log("Received answer:", playerName);
-      setPlayerName(playerName);
+  useEffect(() => {
+
+    // socket.emit("host_join_room", session, socket.id, hostId);
+
+    socket.on("player_answer", (id) => {
+      console.log("Received answer:", id);
+      setPlayerName(id);
+
       setIsAnswering(true);
     });
 
     setTimeout(() => {
       console.log(socket.id);
-      socket.emit("host_page_id", session, socket.id, hostId);
-      socket.on("host_page_id_answer", (_id) => {
+      socket.emit("host_join_room", session, socket.id, hostId);
+      socket.on("host_joined_room", (_id) => {
+        if (_id === hostId) return;
+
         setHostId(_id);
         localStorage.setItem("hostId", _id);
       });
@@ -50,16 +54,26 @@ export default function HostPage() {
       setGamePageId(id);
     });
 
+
+    // socket.on("game_page_id", (gameId) => {
+    //   setGamePageId(gameId);
+    // });
+
     socket.on("themes_list", (themes) => {
       setThemes(themes);
     });
+  }, [hostId, session]);
+
+  useEffect(() => {
+    connectSocket();
+
     return () => {
       disconnectSocket();
     };
   }, [hostId, session]);
 
   const handleGoodAnswer = () => {
-    socket.emit("show_logo", session);
+    socket.emit("answer_yes", session);
     setIsAnswering(false);
     setTimeout(() => {
       setIsModalOpen(false);
@@ -67,18 +81,32 @@ export default function HostPage() {
   };
 
   const handleBadAnswer = () => {
-    socket.emit("bad_answer", session);
+    socket.emit("answer_no", session);
     setIsAnswering(false);
   };
 
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
+    count++;
+    if (count === 5) {
+      socket.emit("round_end", session);
+      count = 0;
+      setIsAnswering(false);
+      setTimeout(() => {
+        setIsModalOpen(false);
+      }, 4000);
+    }
   };
 
   return (
     <div className="host-container">
       <h1>Страница ведущего</h1>
       <button onClick={() => socket.emit("end_game", session)}>End Game</button>
+
+      <button onClick={() => socket.emit("start_game", session)}>
+        Start Game
+      </button>
+
       <div>
         <Modal isOpen={isModalOpen} style={customStyles}>
           <h2>Имя игрока:</h2>
@@ -106,10 +134,12 @@ export default function HostPage() {
                       <button
                         onClick={(e) => {
                           socket.emit(
-                            "select_movie",
+
+                            "get_frames",
+                            gamePageId,
                             themes[theme],
-                            movie.name,
-                            gamePageId
+                            movie.name
+
                           );
                           setIsModalOpen(true);
                           e.target.disabled = true;

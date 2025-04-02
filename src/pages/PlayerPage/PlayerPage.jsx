@@ -36,26 +36,39 @@ export default function Player() {
     },
   };
 
+  const names = ["Черепашки", "Черепушки", "Черемушки"];
+
   useEffect(() => {
     connectSocket();
     setTimeout(() => {
-      {
-        console.log(socket.id);
-        socket.emit("join_room", session, socket.id, playerId, names[id - 1]);
-        socket.on("host_page_id_answer", (_id) => {
-          setPlayerId(_id);
-          localStorage.setItem("playerId", _id);
-        });
-      }
+      console.log(socket.id);
+      socket.emit(
+        "player_join_room",
+        session,
+        names[id - 1],
+        socket.id,
+        playerId
+      );
+      socket.on("player_joined_room", (_id) => {
+        if (_id === playerId) return;
+        setPlayerId(_id);
+        localStorage.setItem("playerId", _id);
+        console.log(_id);
+      });
     }, 500);
 
-    socket.on("broadcast_answer", (PlayerName) => {
-      setPlayerName(PlayerName);
+    socket.on("player_answer", (id) => {
+      setPlayerName(id);
+
       setIsButtonDisabled(true);
       setIsModalOpen(true);
     });
 
-    socket.on("show_logo", () => {
+    socket.on("your_points", (pts) => {
+      setMyPoints(pts);
+    });
+
+    socket.on("answer_yes", () => {
       setStateAnswer("верно!");
       setTimeout(() => {
         setIsButtonDisabled(false);
@@ -65,11 +78,7 @@ export default function Player() {
       }, 6000);
     });
 
-    socket.on("your_points", (pts) => {
-      setMyPoints(pts);
-    });
-
-    socket.on("broadcast_bad_answer", () => {
+    socket.on("answer_no", () => {
       setStateAnswer("не верно!");
       setTimeout(() => {
         setIsButtonDisabled(false);
@@ -88,6 +97,18 @@ export default function Player() {
     socket.on("game_ended_tie", (data) => {
       setEqualPlayers(data);
     });
+
+    socket.on("start_round", () => {
+      setIsButtonDisabled(false);
+    });
+
+    socket.on("round_end", () => {
+      setIsButtonDisabled(true);
+      setPlayerName(null);
+      setStateAnswer(null);
+      setIsModalOpen(false);
+    });
+
     return () => {
       socket.off("broadcast_answer");
       socket.off("broadcast_good_answer");

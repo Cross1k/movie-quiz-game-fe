@@ -20,10 +20,13 @@ const Home = () => {
       socket.emit("create_session", socket.id);
       setSessionId(socket.id);
       // socket.emit("join_room", socket.id);
-    }, 700);
+    }, 400);
 
-    socket.on("game_page", (room) => navigate(`/game/${room}`));
+    socket.on("start_game", (room) => navigate(`/game/${room}`));
     return () => {
+      socket.off("home_page");
+      socket.off("start_game");
+
       disconnectSocket();
     };
   }, [navigate]);
