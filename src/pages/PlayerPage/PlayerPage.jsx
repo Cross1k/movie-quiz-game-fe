@@ -27,13 +27,21 @@ export default function Player() {
     },
   };
 
+  const names = ["Черепашки", "Черепушки", "Черемушки"];
+
   useEffect(() => {
     socket.emit("join_room", session);
 
     setTimeout(() => {
       console.log(socket.id);
-      socket.emit("player_page_id", socket.id, playerId);
-      socket.on("player_page_id_answer", (_id) => {
+      socket.emit(
+        "player_join_room",
+        session,
+        names[id - 1],
+        socket.id,
+        playerId
+      );
+      socket.on("player_joined_room", (_id) => {
         if (_id === playerId) return;
         setPlayerId(_id);
         localStorage.setItem("playerId", _id);
@@ -41,13 +49,17 @@ export default function Player() {
       });
     }, 500);
 
-    socket.on("broadcast_answer", (id) => {
+    socket.on("player_answer", (id) => {
       setPlayerName(id);
       setIsButtonDisabled(true);
       setIsModalOpen(true);
     });
 
-    socket.on("show_logo", () => {
+    socket.on("your_points", (pts) => {
+      setMyPoints(pts);
+    });
+
+    socket.on("answer_yes", () => {
       setStateAnswer("верно!");
       setTimeout(() => {
         setIsButtonDisabled(false);
@@ -57,11 +69,7 @@ export default function Player() {
       }, 5000);
     });
 
-    socket.on("your_points", (pts) => {
-      setMyPoints(pts);
-    });
-
-    socket.on("broadcast_bad_answer", () => {
+    socket.on("answer_no", () => {
       setStateAnswer("не верно!");
       setTimeout(() => {
         setIsButtonDisabled(false);
@@ -70,6 +78,18 @@ export default function Player() {
         setIsModalOpen(false);
       }, 5000);
     });
+
+    socket.on("start_round", () => {
+      setIsButtonDisabled(false);
+    });
+
+    socket.on("round_end", () => {
+      setIsButtonDisabled(true);
+      setPlayerName(null);
+      setStateAnswer(null);
+      setIsModalOpen(false);
+    });
+
     return () => {
       socket.off("broadcast_answer");
       socket.off("broadcast_good_answer");

@@ -12,6 +12,7 @@ export default function Themes() {
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
   const [scoreTable, setScoreTable] = useState(null);
+  const [gameId, setGameId] = useState(localStorage.getItem("gameId") || null);
 
   const { session } = useParams();
 
@@ -56,21 +57,24 @@ export default function Themes() {
   };
 
   useEffect(() => {
-    connectSocket();
-
-    socket.emit("join_room", session);
+    // socket.emit("game_join_room", session);
 
     setTimeout(() => {
-      socket.emit("game_page", session, socket.id);
-    }, 500);
+      socket.emit("game_join_room", session, socket.id, gameId);
+      socket.on("game_joined_room", (_id) => {
+        if (_id === gameId) return;
+        setGameId(_id);
+        localStorage.setItem("gameId", _id);
+      });
+    }, 400);
 
     socket.emit("get_themes");
 
-    socket.on("themes_list", (themes) => {
+    socket.on("all_themes", (themes) => {
       setThemes(themes);
     });
 
-    socket.on("open_frame", (frame) => {
+    socket.on("all_frames", (frame) => {
       setFrames(frame);
       setIsModalOpen(true);
       console.log("got frame", frame);
@@ -80,13 +84,13 @@ export default function Themes() {
       setSelectedFrame(selectedFrame + 1);
     });
 
-    socket.on("show_logo", () => {
+    socket.on("answer_yes", () => {
       setPlayerAnswer("верно!");
       socket.emit(
-        "send_points",
-        5 - selectedFrame,
+        "get_points",
         session,
         playerName,
+        5 - selectedFrame,
         socket.id
       );
       setTimeout(() => {
@@ -107,23 +111,25 @@ export default function Themes() {
       console.log(score);
     });
 
-    socket.on("broadcast_answer", (id) => {
+    socket.on("player_answer", (id) => {
       setPlayerName(id);
     });
 
-    socket.on("broadcast_bad_answer", () => {
+    socket.on("answer_no", () => {
       setPlayerAnswer("не верно!");
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
       }, 4000);
     });
+  }, [session, selectedFrame, playerName]);
 
+  useEffect(() => {
+    connectSocket();
     return () => {
-      // socket.off("themes_list");
       disconnectSocket();
     };
-  }, [session, selectedFrame, playerName]);
+  }, []);
 
   return (
     <div>
@@ -167,7 +173,9 @@ export default function Themes() {
                       onClick={(e) => {
                         console.log(e.target.disabled);
                       }}
-                    >{`${movie.index + 1}`}</button>
+                    >
+                      {!movie.guessed ? `${movie.index + 1}` : `${movie.name}`}
+                    </button>
                   </li>
                 ))}
               </ul>

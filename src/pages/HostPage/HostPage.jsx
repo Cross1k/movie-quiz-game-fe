@@ -9,7 +9,6 @@ export default function HostPage() {
   const [themes, setThemes] = useState([]);
   const [gamePageId, setGamePageId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [disabledMovies, setDisabledMovies] = useState(new Set());
   const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
 
   const { session } = useParams();
@@ -25,10 +24,12 @@ export default function HostPage() {
     },
   };
 
-  useEffect(() => {
-    socket.emit("join_room", session);
+  let count = 0;
 
-    socket.on("broadcast_answer", (id) => {
+  useEffect(() => {
+    // socket.emit("host_join_room", session, socket.id, hostId);
+
+    socket.on("player_answer", (id) => {
       console.log("Received answer:", id);
       setPlayerName(id);
       setIsAnswering(true);
@@ -36,8 +37,9 @@ export default function HostPage() {
 
     setTimeout(() => {
       console.log(socket.id);
-      socket.emit("host_page_id", socket.id, hostId);
-      socket.on("host_page_id_answer", (_id) => {
+      socket.emit("host_join_room", session, socket.id, hostId);
+      socket.on("host_joined_room", (_id) => {
+        if (_id === hostId) return;
         setHostId(_id);
         localStorage.setItem("hostId", _id);
       });
@@ -45,6 +47,7 @@ export default function HostPage() {
 
     socket.on("game_page_id", (id) => {
       console.log("Received game id:", id);
+      socket.emit("get_themes");
       setGamePageId(id);
     });
 
@@ -52,13 +55,9 @@ export default function HostPage() {
     //   setGamePageId(gameId);
     // });
 
-    socket.emit("get_themes");
     socket.on("themes_list", (themes) => {
       setThemes(themes);
     });
-    return () => {
-      socket.off("host_page_id_answer");
-    };
   }, [hostId, session]);
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export default function HostPage() {
   }, []);
 
   const handleGoodAnswer = () => {
-    socket.emit("show_logo", session);
+    socket.emit("answer_yes", session);
     setIsAnswering(false);
     setTimeout(() => {
       setIsModalOpen(false);
@@ -77,59 +76,75 @@ export default function HostPage() {
   };
 
   const handleBadAnswer = () => {
-    socket.emit("bad_answer", session);
+    socket.emit("answer_no", session);
     setIsAnswering(false);
   };
 
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
+    count++;
+    if (count === 5) {
+      socket.emit("round_end", session);
+      count = 0;
+      setIsAnswering(false);
+      setTimeout(() => {
+        setIsModalOpen(false);
+      }, 4000);
+    }
   };
 
   return (
     <div className="host-container">
       <h1>Страница ведущего</h1>
-      <div className="session-info">
-        <h2>Код сессии:</h2>
-        <div className="session-code">{session}</div>
-        <h2>Имя игрока:</h2>
-        <div className="player-name">{playerName}</div>
+      <button onClick={() => socket.emit("end_game", session)}>End Game</button>
+      <button onClick={() => socket.emit("start_game", session)}>
+        Start Game
+      </button>
+      <div>
         <Modal isOpen={isModalOpen} style={customStyles}>
-          <button onClick={handleChangeFrame}>Next</button>
-          {isAnswering && (
+          <h2>Имя игрока:</h2>
+          <p>{playerName}</p>
+          {isAnswering ? (
             <>
               <button onClick={handleGoodAnswer}>Yes</button>
               <button onClick={handleBadAnswer}>No</button>
             </>
+          ) : (
+            <button onClick={handleChangeFrame}>Next</button>
           )}
         </Modal>
       </div>
-      <h2>THEMES</h2>
-      {themes.length > 0 && (
-        <ul>
-          {themes.map((theme) => (
-            <li key={theme.theme}>
-              {theme.theme}
-              <ul>
-                {theme.movies.map((movie) => (
-                  <li key={movie.index}>
-                    <button
-                      onClick={(e) => {
-                        socket.emit(
-                          "select_movie",
-                          theme.theme,
-                          movie.movie,
-                          gamePageId
-                        );
-                        setIsModalOpen(true);
-                        e.target.disabled = true;
-                      }}
-                    >{`${movie.index + 1}: ${movie.movie}`}</button>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+      {themes != null && (
+        <>
+          <h2>THEMES</h2>
+          <ul>
+            {Object.keys(themes).map((theme) => (
+              <li key={theme}>
+                <strong>{theme}</strong>
+                <ul>
+                  {themes[theme].movies.map((movie) => (
+                    <li key={movie.index}>
+                      <button
+                        onClick={(e) => {
+                          socket.emit(
+                            "get_frames",
+                            gamePageId,
+                            themes[theme],
+                            movie.name
+                          );
+                          setIsModalOpen(true);
+                          e.target.disabled = true;
+                        }}
+                      >
+                        {`${movie.index + 1}: ${movie.name}`}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
