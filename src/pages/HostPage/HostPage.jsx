@@ -6,7 +6,7 @@ import Modal from "react-modal";
 export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
   const [isAnswering, setIsAnswering] = useState(false);
-  const [themes, setThemes] = useState([]);
+  const [themes, setThemes] = useState(null);
   const [gamePageId, setGamePageId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
@@ -27,11 +27,13 @@ export default function HostPage() {
   let count = 0;
 
   useEffect(() => {
+
     // socket.emit("host_join_room", session, socket.id, hostId);
 
     socket.on("player_answer", (id) => {
       console.log("Received answer:", id);
       setPlayerName(id);
+
       setIsAnswering(true);
     });
 
@@ -40,16 +42,18 @@ export default function HostPage() {
       socket.emit("host_join_room", session, socket.id, hostId);
       socket.on("host_joined_room", (_id) => {
         if (_id === hostId) return;
+
         setHostId(_id);
         localStorage.setItem("hostId", _id);
       });
     }, 700);
 
-    socket.on("game_page_id", (id) => {
+    socket.on("send_game_page_id", (id) => {
       console.log("Received game id:", id);
       socket.emit("get_themes");
       setGamePageId(id);
     });
+
 
     // socket.on("game_page_id", (gameId) => {
     //   setGamePageId(gameId);
@@ -62,10 +66,11 @@ export default function HostPage() {
 
   useEffect(() => {
     connectSocket();
+
     return () => {
       disconnectSocket();
     };
-  }, []);
+  }, [hostId, session]);
 
   const handleGoodAnswer = () => {
     socket.emit("answer_yes", session);
@@ -97,9 +102,11 @@ export default function HostPage() {
     <div className="host-container">
       <h1>Страница ведущего</h1>
       <button onClick={() => socket.emit("end_game", session)}>End Game</button>
+
       <button onClick={() => socket.emit("start_game", session)}>
         Start Game
       </button>
+
       <div>
         <Modal isOpen={isModalOpen} style={customStyles}>
           <h2>Имя игрока:</h2>
@@ -127,10 +134,12 @@ export default function HostPage() {
                       <button
                         onClick={(e) => {
                           socket.emit(
+
                             "get_frames",
                             gamePageId,
                             themes[theme],
                             movie.name
+
                           );
                           setIsModalOpen(true);
                           e.target.disabled = true;

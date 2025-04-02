@@ -10,11 +10,20 @@ export default function Player() {
   const [stateAnswer, setStateAnswer] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [myPoints, setMyPoints] = useState(0);
+  const [winnerName, setWinnerName] = useState(null);
+  const [winnerScore, setWinnerScore] = useState(null);
+  const [equalPlayers, setEqualPlayers] = useState(null);
+  const [gameEnd, setGameEnd] = useState(false);
   const [playerId, setPlayerId] = useState(
     localStorage.getItem("playerId") || null
   );
 
   const { id, session } = useParams();
+
+  const names = React.useMemo(
+    () => ["Черепашки", "Черепушки", "Черемушки"],
+    []
+  );
 
   const customStyles = {
     content: {
@@ -30,8 +39,7 @@ export default function Player() {
   const names = ["Черепашки", "Черепушки", "Черемушки"];
 
   useEffect(() => {
-    socket.emit("join_room", session);
-
+    connectSocket();
     setTimeout(() => {
       console.log(socket.id);
       socket.emit(
@@ -51,6 +59,7 @@ export default function Player() {
 
     socket.on("player_answer", (id) => {
       setPlayerName(id);
+
       setIsButtonDisabled(true);
       setIsModalOpen(true);
     });
@@ -66,7 +75,7 @@ export default function Player() {
         setPlayerName(null);
         setStateAnswer(null);
         setIsModalOpen(false);
-      }, 5000);
+      }, 6000);
     });
 
     socket.on("answer_no", () => {
@@ -76,7 +85,17 @@ export default function Player() {
         setPlayerName(null);
         setStateAnswer(null);
         setIsModalOpen(false);
-      }, 5000);
+      }, 6000);
+    });
+
+    socket.on("game_ended", (data) => {
+      setWinnerName(data.name);
+      setWinnerScore(data.score);
+      setGameEnd(true);
+    });
+
+    socket.on("game_ended_tie", (data) => {
+      setEqualPlayers(data);
     });
 
     socket.on("start_round", () => {
@@ -94,23 +113,39 @@ export default function Player() {
       socket.off("broadcast_answer");
       socket.off("broadcast_good_answer");
       socket.off("broadcast_bad_answer");
-    };
-  }, [session, playerId]);
-
-  useEffect(() => {
-    connectSocket();
-    return () => {
       disconnectSocket();
     };
-  }, []);
+  }, [session, names, id, playerId]);
 
   const handleAnswer = () => {
-    socket.emit("give_answer", session, id);
+    socket.emit("give_answer", session, playerName);
     setIsButtonDisabled(true);
   };
 
   return (
     <>
+      <Modal isOpen={gameEnd} style={customStyles}>
+        {winnerName && (
+          <>
+            <h2> Победили {winnerName}</h2>
+
+            <h3>Счет: {winnerScore}</h3>
+          </>
+        )}
+        {equalPlayers && (
+          <>
+            <h2>Ничья!</h2>
+            <ul>
+              {equalPlayers.map((player) => (
+                <li key={player.name}>
+                  <h3>{player.name}</h3>
+                  <h3>{player.score}</h3>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </Modal>
       <Modal style={customStyles} isOpen={isModalOpen}>
         Отвечает {playerName} {stateAnswer && `- ${stateAnswer}`}
       </Modal>

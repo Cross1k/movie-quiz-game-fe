@@ -26,6 +26,7 @@ const Home = () => {
     return () => {
       socket.off("home_page");
       socket.off("start_game");
+
       disconnectSocket();
     };
   }, [navigate]);
