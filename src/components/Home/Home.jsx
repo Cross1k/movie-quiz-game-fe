@@ -15,10 +15,10 @@ const Home = () => {
   useEffect(() => {
     // connectSocket();
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setSessionId(socket.id);
-      socket.emit("create_session", socket.id);
-      console.log("my id:", socket.id);
+      socket.emit("create_session", sessionId);
+      console.log("my id:", sessionId);
     }, 1000);
 
     socket.on("start_game", (room) => {
@@ -31,7 +31,7 @@ const Home = () => {
 
       // disconnectSocket();
     };
-  }, [navigate]);
+  }, [navigate, sessionId]);
 
   useEffect(() => {
     connectSocket();

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useParams } from "react-router-dom";
 import Modal from "react-modal";
@@ -11,9 +11,9 @@ export default function Themes() {
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
   const [scoreTable, setScoreTable] = useState(null);
-  // const [gameId, setGameId] = useState(localStorage.getItem("gameId") || null);
-  // const [selectedTheme, setSelectedTheme] = useState(null);
-  // const [selectedMovie, setSelectedMovie] = useState(null);
+  const [gameEnd, setGameEnd] = useState(false);
+  const [winnerName, setWinnerName] = useState(null);
+  const [winnerPts, setWinnerPts] = useState(null);
 
   const { session } = useParams();
 
@@ -57,36 +57,23 @@ export default function Themes() {
     },
   };
 
-  // useMemo(() => {
-  //   session;
-  // }, [session]);
-
   useEffect(() => {
     if (!session) return;
-    // connectSocket();
-    // socket.emit("game_join_room", session);
+
     setTimeout(() => {
       socket.emit("game_join_room", session, socket.id);
       console.log(session, socket.id);
       socket.emit("get_themes", session);
-      // socket.on("game_joined_room", (_id) => {
-      //   if (_id === gameId) return;
-      //   setGameId(_id);
-      //   localStorage.setItem("gameId", _id);
-      // });
     }, 600);
 
     socket.on("all_themes", (themes) => {
       setThemes(themes);
+      console.log(themes);
     });
 
     socket.on("all_frames", (frame) => {
       setFrames(frame);
       setIsModalOpen(true);
-      // setSelectedTheme(theme);
-      // selectedMovie(movie);
-      // console.log("got frame", frame);
-      // console.log("movie");
     });
 
     socket.on("change_frame", () => {
@@ -104,10 +91,11 @@ export default function Themes() {
       console.log("playerName", playerName);
     });
 
-    socket.on("answer_yes", (id, themes) => {
+    socket.on("answer_yes", (playerName) => {
       setPlayerAnswer("верно!");
-      setPlayerName(id);
-      setThemes(themes);
+      setPlayerName(playerName);
+      // setThemes(themes);
+      // updateMovieStatus(theme, movie, playerName);
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
@@ -141,6 +129,21 @@ export default function Themes() {
         setPlayerAnswer(null);
       }, 4000);
     });
+
+    socket.on("round_end", () => {
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setSelectedFrame(0);
+        setFrames([]);
+      }, 3000);
+    });
+
+    socket.on("end_game", (winner, pts) => {
+      setWinnerName(winner);
+      setWinnerPts(pts);
+      setGameEnd(true);
+    });
+
     return () => {
       socket.off("all_frames");
       socket.off("change_frame");
@@ -150,11 +153,6 @@ export default function Themes() {
       socket.off("answer_no");
       socket.off("get_points");
       socket.off("all_themes");
-      // setTimeout(() => {
-      //   socket.off("game_join_room");
-      // }, 800);
-      // socket.off("get_themes");
-      // disconnectSocket();
     };
   }, [selectedFrame, session]);
 
@@ -179,28 +177,13 @@ export default function Themes() {
           )}
         </Modal>
       )}
-      {/* <Modal isOpen={gameEnd} style={customStyles}>
-        {winnerName && (
-          <>
-            <h2> Победили {winnerName}</h2>
+      <Modal isOpen={gameEnd} style={customStyles}>
+        <>
+          <h2>{winnerName}</h2>
 
-            <h3>Счет: {winnerScore}</h3>
-          </>
-        )}
-        {equalPlayers && (
-          <>
-            <h2>Ничья!</h2>
-            <ul>
-              {equalPlayers.map((player) => (
-                <li key={player.name}>
-                  <h3>{player.name}</h3>
-                  <h3>{player.score}</h3>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </Modal> */}
+          <h3>Счет: {winnerPts}</h3>
+        </>
+      </Modal>
       {scoreTable && (
         <>
           <h2>Таблица результатов</h2>
@@ -222,8 +205,8 @@ export default function Themes() {
             <li key={theme}>
               {theme}
               <ul>
-                {movies.map((movie) => (
-                  <li key={movie.index}>
+                {movies.movies.map((movie, index) => (
+                  <li key={index}>
                     <button
                       onClick={(e) => {
                         console.log(e.target.disabled);

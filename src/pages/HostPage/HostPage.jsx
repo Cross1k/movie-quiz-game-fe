@@ -7,7 +7,7 @@ export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [themes, setThemes] = useState(null);
-  // const [gamePageId, setGamePageId] = useState(null);
+  const [count, setCount] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
 
@@ -24,11 +24,11 @@ export default function HostPage() {
     },
   };
 
-  let count = 0;
+  // let count = 0;
 
   // useMemo(() => {
-  //   session;
-  // }, [session]);
+  //   count;
+  // }, [count, themes]);
 
   useEffect(() => {
     socket.emit("host_join_room", session, socket.id);
@@ -65,6 +65,7 @@ export default function HostPage() {
 
   const handleGoodAnswer = () => {
     socket.emit("answer_yes", session, playerName);
+    socket.emit("round_end", session);
     setIsAnswering(false);
     setTimeout(() => {
       setPlayerName(null);
@@ -77,13 +78,14 @@ export default function HostPage() {
     setPlayerName(null);
     setIsAnswering(false);
   };
-
+  // let count = 0;
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
-    count++;
+    setCount(count + 1);
+    console.log(count);
     if (count === 5) {
       socket.emit("round_end", session);
-      count = 0;
+      setCount(1);
       setIsAnswering(false);
       setTimeout(() => {
         setIsModalOpen(false);
@@ -108,10 +110,8 @@ export default function HostPage() {
     <div className="host-container">
       <h1>Страница ведущего</h1>
       {socket.id && <h2>{socket.id}</h2>}
-      <button onClick={handleEndGame}>End Game</button>
-
       <button onClick={handleStartGame}>Start Game</button>
-
+      <button onClick={handleEndGame}>End Game</button>
       <div>
         <Modal isOpen={isModalOpen} style={customStyles}>
           <h2>Имя игрока:</h2>
@@ -134,11 +134,12 @@ export default function HostPage() {
               <li key={theme}>
                 <strong>{theme}</strong>
                 <ul>
-                  {movies.map((movie) => (
-                    <li key={movie.index}>
+                  {movies.movies.map((movie, index) => (
+                    <li key={index}>
                       <button
                         onClick={(e) => {
                           socket.emit("get_frames", session, theme, movie.name);
+                          socket.emit("start_round", session);
                           setIsModalOpen(true);
                           e.target.disabled = true;
                         }}
