@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Modal from "react-modal";
 
@@ -14,16 +14,16 @@ export default function Player() {
   const [winnerScore, setWinnerScore] = useState(null);
   const [equalPlayers, setEqualPlayers] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
-  const [playerId, setPlayerId] = useState(
-    localStorage.getItem("playerId") || null
-  );
+  // const [playerId, setPlayerId] = useState(
+  //   localStorage.getItem("playerId") || null
+  // );
 
   const { id, session } = useParams();
 
-  const names = React.useMemo(
-    () => ["Черепашки", "Черепушки", "Черемушки"],
-    []
-  );
+  // const names = React.useMemo(
+  //   () => ["Черепашки", "Черепушки", "Черемушки"],
+  //   []
+  // );
 
   const customStyles = {
     content: {
@@ -38,24 +38,27 @@ export default function Player() {
 
   const names = ["Черепашки", "Черепушки", "Черемушки"];
 
+  // useMemo(() => {
+  //   session;
+  // }, [session]);
+
   useEffect(() => {
-    connectSocket();
     setTimeout(() => {
       console.log(socket.id);
       socket.emit(
         "player_join_room",
         session,
         names[id - 1],
-        socket.id,
-        playerId
+        socket.id
+        // playerId
       );
-      socket.on("player_joined_room", (_id) => {
-        if (_id === playerId) return;
-        setPlayerId(_id);
-        localStorage.setItem("playerId", _id);
-        console.log(_id);
-      });
-    }, 500);
+      // socket.on("player_joined_room", (_id) => {
+      //   if (_id === playerId) return;
+      //   setPlayerId(_id);
+      //   localStorage.setItem("playerId", _id);
+      //   console.log(_id);
+      // });
+    }, 600);
 
     socket.on("player_answer", (id) => {
       setPlayerName(id);
@@ -110,15 +113,29 @@ export default function Player() {
     });
 
     return () => {
-      socket.off("broadcast_answer");
-      socket.off("broadcast_good_answer");
-      socket.off("broadcast_bad_answer");
+      // socket.off("player_join_room");
+      socket.off("player_answer");
+      socket.off("your_points");
+      socket.off("answer_yes");
+      socket.off("answer_no");
+      socket.off("game_ended");
+      socket.off("game_ended");
+      socket.off("game_ended");
+      socket.off("game_ended_tie");
+      socket.off("start_round");
+      socket.off("round_end");
+    };
+  }, [id, names, session]);
+
+  useEffect(() => {
+    connectSocket();
+    return () => {
       disconnectSocket();
     };
-  }, [session, names, id, playerId]);
+  }, [session]);
 
   const handleAnswer = () => {
-    socket.emit("give_answer", session, playerName);
+    socket.emit("player_answer", session, names[id - 1]);
     setIsButtonDisabled(true);
   };
 
@@ -149,7 +166,7 @@ export default function Player() {
       <Modal style={customStyles} isOpen={isModalOpen}>
         Отвечает {playerName} {stateAnswer && `- ${stateAnswer}`}
       </Modal>
-      <h2>Команда {id}</h2>
+      <h2>Команда {names[id - 1]}</h2>
       <button type="button" onClick={handleAnswer} disabled={isButtonDisabled}>
         Я знаю!!! 🔔
       </button>

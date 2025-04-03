@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useParams } from "react-router-dom";
 import Modal from "react-modal";
@@ -7,9 +7,9 @@ export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [themes, setThemes] = useState(null);
-  const [gamePageId, setGamePageId] = useState(null);
+  // const [gamePageId, setGamePageId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
+  // const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
 
   const { session } = useParams();
 
@@ -26,43 +26,34 @@ export default function HostPage() {
 
   let count = 0;
 
-  useEffect(() => {
+  // useMemo(() => {
+  //   session;
+  // }, [session]);
 
-    // socket.emit("host_join_room", session, socket.id, hostId);
+  useEffect(() => {
+    socket.emit("host_join_room", session, socket.id);
 
     socket.on("player_answer", (id) => {
       console.log("Received answer:", id);
       setPlayerName(id);
-
       setIsAnswering(true);
     });
 
     setTimeout(() => {
       console.log(socket.id);
-      socket.emit("host_join_room", session, socket.id, hostId);
-      socket.on("host_joined_room", (_id) => {
-        if (_id === hostId) return;
+      socket.emit("host_join_room", session, socket.id);
+    }, 1000);
 
-        setHostId(_id);
-        localStorage.setItem("hostId", _id);
-      });
-    }, 700);
-
-    socket.on("send_game_page_id", (id) => {
-      console.log("Received game id:", id);
-      socket.emit("get_themes");
-      setGamePageId(id);
-    });
-
-
-    // socket.on("game_page_id", (gameId) => {
-    //   setGamePageId(gameId);
-    // });
-
-    socket.on("themes_list", (themes) => {
+    socket.on("all_themes", (themes) => {
       setThemes(themes);
+      console.log(themes);
     });
-  }, [hostId, session]);
+    return () => {
+      socket.off("player_answer");
+      // socket.off("player_answer");
+      socket.off("all_themes");
+    };
+  }, [session]);
 
   useEffect(() => {
     connectSocket();
@@ -70,18 +61,20 @@ export default function HostPage() {
     return () => {
       disconnectSocket();
     };
-  }, [hostId, session]);
+  }, []);
 
   const handleGoodAnswer = () => {
-    socket.emit("answer_yes", session);
+    socket.emit("answer_yes", session, playerName);
     setIsAnswering(false);
     setTimeout(() => {
+      setPlayerName(null);
       setIsModalOpen(false);
     }, 4000);
   };
 
   const handleBadAnswer = () => {
     socket.emit("answer_no", session);
+    setPlayerName(null);
     setIsAnswering(false);
   };
 
@@ -98,14 +91,26 @@ export default function HostPage() {
     }
   };
 
+  const handleStartGame = () => {
+    setTimeout(() => {
+      socket.emit("start_game", session);
+      console.log("click", session);
+    }, 400);
+  };
+
+  const handleEndGame = () => {
+    setTimeout(() => {
+      socket.emit("end_game", session);
+    }, 400);
+  };
+
   return (
     <div className="host-container">
       <h1>Страница ведущего</h1>
-      <button onClick={() => socket.emit("end_game", session)}>End Game</button>
+      {socket.id && <h2>{socket.id}</h2>}
+      <button onClick={handleEndGame}>End Game</button>
 
-      <button onClick={() => socket.emit("start_game", session)}>
-        Start Game
-      </button>
+      <button onClick={handleStartGame}>Start Game</button>
 
       <div>
         <Modal isOpen={isModalOpen} style={customStyles}>
@@ -125,22 +130,15 @@ export default function HostPage() {
         <>
           <h2>THEMES</h2>
           <ul>
-            {Object.keys(themes).map((theme) => (
+            {Object.entries(themes).map(([theme, movies]) => (
               <li key={theme}>
                 <strong>{theme}</strong>
                 <ul>
-                  {themes[theme].movies.map((movie) => (
+                  {movies.map((movie) => (
                     <li key={movie.index}>
                       <button
                         onClick={(e) => {
-                          socket.emit(
-
-                            "get_frames",
-                            gamePageId,
-                            themes[theme],
-                            movie.name
-
-                          );
+                          socket.emit("get_frames", session, theme, movie.name);
                           setIsModalOpen(true);
                           e.target.disabled = true;
                         }}

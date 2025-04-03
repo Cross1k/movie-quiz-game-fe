@@ -13,29 +13,38 @@ const Home = () => {
   const findURL = window.location.href; // use it on prod
 
   useEffect(() => {
-    connectSocket();
+    // connectSocket();
+
     setTimeout(() => {
-      console.log("my id:", socket.id);
-
-      socket.emit("create_session", socket.id);
       setSessionId(socket.id);
-      // socket.emit("join_room", socket.id);
-    }, 400);
+      socket.emit("create_session", socket.id);
+      console.log("my id:", socket.id);
+    }, 1000);
 
-    socket.on("start_game", (room) => navigate(`/game/${room}`));
+    socket.on("start_game", (room) => {
+      console.log("navigated to", room);
+      navigate(`/game/${room}`);
+    });
     return () => {
       socket.off("home_page");
       socket.off("start_game");
 
-      disconnectSocket();
+      // disconnectSocket();
     };
   }, [navigate]);
+
+  useEffect(() => {
+    connectSocket();
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
 
   return (
     <>
       <QRCodeCanvas
         className={css.qrcode}
-        value={`${findURL}/host/${sessionId}`}
+        value={`${findURL}host/${sessionId}`}
         // value={`http://192.168.88.73:5173/host/${sessionId}`}
         size={400}
         session={sessionId}
@@ -43,7 +52,7 @@ const Home = () => {
       {players.map((player) => (
         <QRCodeCanvas
           className={css.qrcode}
-          value={`${findURL}/player/${player}/${sessionId}`}
+          value={`${findURL}player/${player}/${sessionId}`}
           // value={`http://192.168.88.73:5173/player/${player}/${sessionId}`}
           key={player}
           size={200}

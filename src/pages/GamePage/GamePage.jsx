@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useParams } from "react-router-dom";
 import Modal from "react-modal";
@@ -11,7 +11,9 @@ export default function Themes() {
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
   const [scoreTable, setScoreTable] = useState(null);
-  const [gameId, setGameId] = useState(localStorage.getItem("gameId") || null);
+  // const [gameId, setGameId] = useState(localStorage.getItem("gameId") || null);
+  // const [selectedTheme, setSelectedTheme] = useState(null);
+  // const [selectedMovie, setSelectedMovie] = useState(null);
 
   const { session } = useParams();
 
@@ -55,20 +57,24 @@ export default function Themes() {
     },
   };
 
+  // useMemo(() => {
+  //   session;
+  // }, [session]);
+
   useEffect(() => {
-
+    if (!session) return;
+    // connectSocket();
     // socket.emit("game_join_room", session);
-
     setTimeout(() => {
-      socket.emit("game_join_room", session, socket.id, gameId);
-      socket.on("game_joined_room", (_id) => {
-        if (_id === gameId) return;
-        setGameId(_id);
-        localStorage.setItem("gameId", _id);
-      });
-    }, 400);
-
-    socket.emit("get_themes");
+      socket.emit("game_join_room", session, socket.id);
+      console.log(session, socket.id);
+      socket.emit("get_themes", session);
+      // socket.on("game_joined_room", (_id) => {
+      //   if (_id === gameId) return;
+      //   setGameId(_id);
+      //   localStorage.setItem("gameId", _id);
+      // });
+    }, 600);
 
     socket.on("all_themes", (themes) => {
       setThemes(themes);
@@ -77,22 +83,31 @@ export default function Themes() {
     socket.on("all_frames", (frame) => {
       setFrames(frame);
       setIsModalOpen(true);
-      console.log("got frame", frame);
+      // setSelectedTheme(theme);
+      // selectedMovie(movie);
+      // console.log("got frame", frame);
+      // console.log("movie");
     });
 
     socket.on("change_frame", () => {
       setSelectedFrame(selectedFrame + 1);
     });
 
-    socket.on("answer_yes", () => {
+    socket.on("all_points", (score) => {
+      console.log("game received points");
+      setScoreTable(score);
+      console.log(score);
+    });
+
+    socket.on("player_answer", (playerName) => {
+      setPlayerName(playerName);
+      console.log("playerName", playerName);
+    });
+
+    socket.on("answer_yes", (id, themes) => {
       setPlayerAnswer("верно!");
-      socket.emit(
-        "get_points",
-        session,
-        playerName,
-        5 - selectedFrame,
-        socket.id
-      );
+      setPlayerName(id);
+      setThemes(themes);
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
@@ -106,13 +121,17 @@ export default function Themes() {
       console.log("got logo");
     });
 
-    socket.on("all_points", (score) => {
-      setScoreTable(score);
-      console.log(score);
-    });
-
-    socket.on("player_answer", (id) => {
-      setPlayerName(id);
+    socket.on("get_points", (playerName) => {
+      socket.emit(
+        "player_points",
+        session,
+        playerName,
+        5 - selectedFrame,
+        socket.id
+        // selectedTheme,
+        // selectedMovie
+      );
+      console.log("emitted:", session, playerName, 5 - selectedFrame);
     });
 
     socket.on("answer_no", () => {
@@ -122,8 +141,22 @@ export default function Themes() {
         setPlayerAnswer(null);
       }, 4000);
     });
-  }, [session, selectedFrame, playerName]);
-
+    return () => {
+      socket.off("all_frames");
+      socket.off("change_frame");
+      socket.off("all_points");
+      socket.off("player_answer");
+      socket.off("answer_yes");
+      socket.off("answer_no");
+      socket.off("get_points");
+      socket.off("all_themes");
+      // setTimeout(() => {
+      //   socket.off("game_join_room");
+      // }, 800);
+      // socket.off("get_themes");
+      // disconnectSocket();
+    };
+  }, [selectedFrame, session]);
 
   useEffect(() => {
     connectSocket();
@@ -131,7 +164,6 @@ export default function Themes() {
       disconnectSocket();
     };
   }, []);
-
 
   return (
     <div>
@@ -147,7 +179,7 @@ export default function Themes() {
           )}
         </Modal>
       )}
-      <Modal isOpen={gameEnd} style={customStyles}>
+      {/* <Modal isOpen={gameEnd} style={customStyles}>
         {winnerName && (
           <>
             <h2> Победили {winnerName}</h2>
@@ -168,7 +200,7 @@ export default function Themes() {
             </ul>
           </>
         )}
-      </Modal>
+      </Modal> */}
       {scoreTable && (
         <>
           <h2>Таблица результатов</h2>
@@ -176,7 +208,7 @@ export default function Themes() {
             {scoreTable.map((player) => (
               <li key={player.name}>
                 <h3>{player.name}</h3>
-                <h3>{player.score}</h3>
+                <h3>{player.points}</h3>
               </li>
             ))}
           </ul>
@@ -186,16 +218,17 @@ export default function Themes() {
       <h2>Выберите тему</h2>
       {themes != null && (
         <ul>
-          {Object.keys(themes).map((theme) => (
+          {Object.entries(themes).map(([theme, movies]) => (
             <li key={theme}>
               {theme}
               <ul>
-                {themes[theme].movies.map((movie) => (
+                {movies.map((movie) => (
                   <li key={movie.index}>
                     <button
                       onClick={(e) => {
                         console.log(e.target.disabled);
                       }}
+                      disabled={movie.guessed}
                     >
                       {!movie.guessed ? `${movie.index + 1}` : `${movie.name}`}
                     </button>
