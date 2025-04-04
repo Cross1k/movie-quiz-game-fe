@@ -208,7 +208,7 @@ export default function Themes() {
         </Modal>
       )}
       <Modal isOpen={gameEnd} style={customStyles}>
-        <div className={css.modalPlayer}>
+        <div className={css.modalEnd}>
           <h2 className={css.menuTitle}>{winnerName}</h2>
 
           <h3 className={css.menuTitle}>Счет: {winnerPts}</h3>
