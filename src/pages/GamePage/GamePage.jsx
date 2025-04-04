@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
+import css from "./GamePage.module.css";
+
+const initialState = [
+  { socketId: null, points: 0, name: "Черепашки" },
+  { socketId: null, points: 0, name: "Черепушки" },
+  { socketId: null, points: 0, name: "Черемушки" },
+];
 
 export default function Themes() {
   const [themes, setThemes] = useState([]);
@@ -10,10 +17,13 @@ export default function Themes() {
   const [selectedFrame, setSelectedFrame] = useState(0);
   const [playerName, setPlayerName] = useState(null);
   const [playerAnswer, setPlayerAnswer] = useState(null);
-  const [scoreTable, setScoreTable] = useState(null);
+  const [scoreTable, setScoreTable] = useState(initialState);
   const [gameEnd, setGameEnd] = useState(false);
   const [winnerName, setWinnerName] = useState(null);
   const [winnerPts, setWinnerPts] = useState(null);
+  const [socketId, setSocketId] = useState(null);
+
+  const navigate = useNavigate();
 
   const { session } = useParams();
 
@@ -48,23 +58,32 @@ export default function Themes() {
 
   const customStyles = {
     content: {
+      padding: 0,
       top: "50%",
       left: "50%",
       right: "auto",
       bottom: "auto",
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
+      backgroundColor: "#e4f2ff",
+    },
+    overlay: {
+      backgroundColor: "#rgba(228, 242, 255, 0.99)",
+      backdropFilter: "blur(8px)",
     },
   };
 
   useEffect(() => {
-    if (!session) return;
-
     setTimeout(() => {
-      socket.emit("game_join_room", session, socket.id);
-      console.log(session, socket.id);
+      setSocketId(socket.id);
+      console.log(session, socketId);
+      socket.emit("game_join_room", session, socketId);
       socket.emit("get_themes", session);
-    }, 600);
+    }, 700);
+  }, [socketId, session]);
+
+  useEffect(() => {
+    if (!session) return;
 
     socket.on("all_themes", (themes) => {
       setThemes(themes);
@@ -91,21 +110,18 @@ export default function Themes() {
       console.log("playerName", playerName);
     });
 
-    socket.on("answer_yes", (playerName) => {
+    socket.on("answer_yes", () => {
       setPlayerAnswer("верно!");
-      setPlayerName(playerName);
-      // setThemes(themes);
-      // updateMovieStatus(theme, movie, playerName);
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
         setSelectedFrame(5);
-        setTimeout(() => {
-          setIsModalOpen(false);
-          setSelectedFrame(0);
-          setFrames([]);
-        }, 3000);
-      }, 3000);
+      }, 1000);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setSelectedFrame(0);
+        setFrames([]);
+      }, 5000);
       console.log("got logo");
     });
 
@@ -142,6 +158,9 @@ export default function Themes() {
       setWinnerName(winner);
       setWinnerPts(pts);
       setGameEnd(true);
+      setTimeout(() => {
+        navigate("/");
+      }, 4000);
     });
 
     return () => {
@@ -154,7 +173,7 @@ export default function Themes() {
       socket.off("get_points");
       socket.off("all_themes");
     };
-  }, [selectedFrame, session]);
+  }, [navigate, selectedFrame, session]);
 
   useEffect(() => {
     connectSocket();
@@ -168,59 +187,60 @@ export default function Themes() {
       {frames.length > 0 && (
         <Modal isOpen={isModalOpen} style={customStyles}>
           {playerName ? (
-            <p>
-              Отвечает {playerName}
-              {playerAnswer && ` - ${playerAnswer}`}
-            </p>
+            <div className={css.modalPlayer}>
+              <h3 className={css.playerName}>
+                Отвечают {playerName}
+                {playerAnswer && ` - ${playerAnswer}`}
+              </h3>
+            </div>
           ) : (
             <img src={sortedUrls[selectedFrame]} />
           )}
         </Modal>
       )}
       <Modal isOpen={gameEnd} style={customStyles}>
-        <>
-          <h2>{winnerName}</h2>
+        <div className={css.modalPlayer}>
+          <h2 className={css.menuTitle}>{winnerName}</h2>
 
-          <h3>Счет: {winnerPts}</h3>
-        </>
+          <h3 className={css.menuTitle}>Счет: {winnerPts}</h3>
+        </div>
       </Modal>
-      {scoreTable && (
-        <>
-          <h2>Таблица результатов</h2>
-          <ul>
-            {scoreTable.map((player) => (
-              <li key={player.name}>
-                <h3>{player.name}</h3>
-                <h3>{player.points}</h3>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
 
-      <h2>Выберите тему</h2>
+      <h1 className={css.title}>Страница игры</h1>
+      <h2 className={css.menuTitle}>Таблица результатов</h2>
+      <div className={css.scoreTable}>
+        {scoreTable.map((player) => (
+          <div key={player.name} className={css.playerWrap}>
+            <h3 className={css.playerName}>{player.name}</h3>
+            <h3 className={css.playerName}>{player.points}</h3>
+          </div>
+        ))}
+      </div>
+
       {themes != null && (
-        <ul>
-          {Object.entries(themes).map(([theme, movies]) => (
-            <li key={theme}>
-              {theme}
-              <ul>
-                {movies.movies.map((movie, index) => (
-                  <li key={index}>
-                    <button
-                      onClick={(e) => {
-                        console.log(e.target.disabled);
-                      }}
-                      disabled={movie.guessed}
-                    >
-                      {!movie.guessed ? `${movie.index + 1}` : `${movie.name}`}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+        <>
+          <h2 className={css.menuTitle}>Выберите тему</h2>
+          <div className={css.scoreTable}>
+            {Object.entries(themes).map(([theme, movies]) => (
+              <div key={theme} className={css.playerWrap}>
+                <h3 className={css.playerName} width="90px">
+                  {theme}
+                </h3>
+                <div className={css.moviesWrap}>
+                  {movies.movies.map((movie, index) => (
+                    <div key={index} className={css.btnWrap}>
+                      <button disabled={movie.guessed} className={css.btn}>
+                        {!movie.guessed
+                          ? `${movie.index + 1}`
+                          : `${movie.name}`}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
+
+import css from "./PlayerPage.module.css";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 
@@ -13,28 +15,40 @@ export default function Player() {
   const [winnerName, setWinnerName] = useState(null);
   const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
+  const [socketId, setSocketId] = useState(null);
 
   const { id, session } = useParams();
 
+  const navigate = useNavigate();
+
   const customStyles = {
     content: {
+      // padding: 0,
       top: "50%",
       left: "50%",
       right: "auto",
       bottom: "auto",
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
+      backgroundColor: "#e4f2ff",
+    },
+    overlay: {
+      backgroundColor: "#rgba(228, 242, 255, 0.99)",
+      backdropFilter: "blur(8px)",
     },
   };
 
-  const names = ["Черепашки", "Черепушки", "Черемушки"];
+  const names = useMemo(() => ["Черепашки", "Черепушки", "Черемушки"], []);
 
   useEffect(() => {
     setTimeout(() => {
-      console.log(socket.id);
-      socket.emit("player_join_room", session, names[id - 1], socket.id);
-    }, 1000);
+      setSocketId(socket.id);
+      console.log(socketId);
+      socket.emit("player_join_room", session, names[id - 1], socketId);
+    }, 700);
+  }, [id, names, session, socketId]);
 
+  useEffect(() => {
     socket.on("player_answer", (id) => {
       setPlayerName(id);
 
@@ -58,12 +72,12 @@ export default function Player() {
 
     socket.on("answer_no", () => {
       setStateAnswer("не верно!");
-      setIsButtonDisabled(true);
       setTimeout(() => {
         setPlayerName(null);
         setStateAnswer(null);
         setIsModalOpen(false);
-      }, 6000);
+      }, 3000);
+      setIsButtonDisabled(false);
     });
 
     socket.on("start_round", () => {
@@ -76,13 +90,16 @@ export default function Player() {
         setPlayerName(null);
         setStateAnswer(null);
         setIsModalOpen(false);
-      }, 6000);
+      }, 3000);
     });
 
     socket.on("end_game", (winner, pts) => {
       setWinnerName(winner);
       setWinnerPts(pts);
       setGameEnd(true);
+      setTimeout(() => {
+        navigate("/");
+      }, 4000);
     });
 
     return () => {
@@ -95,7 +112,7 @@ export default function Player() {
       socket.off("start_round");
       socket.off("round_end");
     };
-  }, [id, names, session]);
+  }, [id, names, navigate, session]);
 
   useEffect(() => {
     connectSocket();
@@ -110,7 +127,7 @@ export default function Player() {
   };
 
   return (
-    <>
+    <div className={css.wrap}>
       <Modal isOpen={gameEnd} style={customStyles}>
         <>
           <h2>{winnerName}</h2>
@@ -119,13 +136,24 @@ export default function Player() {
         </>
       </Modal>
       <Modal style={customStyles} isOpen={isModalOpen}>
-        Отвечает {playerName} {stateAnswer && `- ${stateAnswer}`}
+        <div className={css.modalPlayer}>
+          <p className={css.answer}>
+            Отвечают {playerName} {stateAnswer && `- ${stateAnswer}`}
+          </p>
+        </div>
       </Modal>
-      <h2>Команда {names[id - 1]}</h2>
-      <button type="button" onClick={handleAnswer} disabled={isButtonDisabled}>
+      <h1 className={css.title}>
+        Команда <bold>{names[id - 1]}</bold>
+      </h1>
+      <button
+        type="button"
+        onClick={handleAnswer}
+        disabled={isButtonDisabled}
+        className={css.btn}
+      >
         Я знаю!!! 🔔
       </button>
-      <p>У нас {myPoints} очков</p>
-    </>
+      <p className={css.menuTitle}>У нас {myPoints} очков</p>
+    </div>
   );
 }

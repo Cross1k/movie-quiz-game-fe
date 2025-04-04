@@ -19,7 +19,7 @@ const Home = () => {
       setSessionId(socket.id);
       socket.emit("create_session", sessionId);
       console.log("my id:", sessionId);
-    }, 1000);
+    }, 700);
 
     socket.on("start_game", (room) => {
       console.log("navigated to", room);
@@ -42,24 +42,36 @@ const Home = () => {
 
   return (
     <>
-      <QRCodeCanvas
-        className={css.qrcode}
-        value={`${findURL}host/${sessionId}`}
-        // value={`http://192.168.88.73:5173/host/${sessionId}`}
-        size={400}
-        session={sessionId}
-      />
-      {players.map((player) => (
-        <QRCodeCanvas
-          className={css.qrcode}
-          value={`${findURL}player/${player}/${sessionId}`}
-          // value={`http://192.168.88.73:5173/player/${player}/${sessionId}`}
-          key={player}
-          size={200}
-          number={player}
-          session={sessionId}
-        />
-      ))}
+      <h1 className={css.title}>Quiz Movie Game</h1>
+      <div className={css.wrap}>
+        <div className={css.qrPlayer}>
+          <QRCodeCanvas
+            className={css.qrcode}
+            value={`${findURL}host/${sessionId}`}
+            // value={`http://192.168.88.73:5173/host/${sessionId}`}
+            size={300}
+            marginSize={0}
+            padding={0}
+            session={sessionId}
+          />
+          <h2 className={css.menuTitle}>Ведущий</h2>
+        </div>
+        {players.map((player) => (
+          <div className={css.qrPlayer}>
+            {" "}
+            <QRCodeCanvas
+              className={css.qrcode}
+              value={`${findURL}player/${player}/${sessionId}`}
+              // value={`http://192.168.88.73:5173/player/${player}/${sessionId}`}
+              key={player}
+              size={150}
+              number={player}
+              session={sessionId}
+            />
+            <h2 className={css.menuTitle}>Команда {player}</h2>
+          </div>
+        ))}
+      </div>
     </>
   );
 };

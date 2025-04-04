@@ -1,0 +1,72 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.modalPlayer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* width: 40dvw; */
+  /* height: 30dvh; */
+  background-color: #e4f2ff;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.playerName {
+  font-size: 1.5rem;
+  text-align: center;
+  align-self: center;
+}
+
+.menuTitle {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 15px;
+}
+
+.title {
+  /* margin: 0 auto; */
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.scoreTable {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 20px;
+  border: 2px solid #000;
+  margin-bottom: 40px;
+  text-wrap: wrap;
+  align-content: center;
+  justify-content: space-evenly;
+}
+
+.playerWrap {
+  display: flex;
+  gap: 20px;
+  border-radius: 20px;
+  border: 2px solid #000;
+  padding: 1rem;
+}
+
+.moviesWrap {
+  display: flex;
+  /* flex-direction: column; */
+  gap: 10px;
+  align-self: center;
+}
+
+.btn {
+  padding: 10px 15px;
+  font-size: 1.1rem;
+  width: 100%;
+  /* border-radius: 50%; */
+}
