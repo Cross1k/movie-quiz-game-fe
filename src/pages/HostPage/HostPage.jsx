@@ -91,9 +91,9 @@ export default function HostPage() {
   const handleGoodAnswer = () => {
     socket.emit("answer_yes", session, playerName);
     setCount(1);
-    socket.emit("round_end", session);
     setIsAnswering(false);
     setTimeout(() => {
+      socket.emit("round_end", session);
       setPlayerName(null);
       setIsModalOpen(false);
     }, 3000);
@@ -109,7 +109,7 @@ export default function HostPage() {
     socket.emit("change_frame", session);
     setCount(count + 1);
     console.log(count);
-    if (count === 5) {
+    if (count >= 5) {
       socket.emit("round_end", session);
       setCount(1);
       setIsAnswering(false);

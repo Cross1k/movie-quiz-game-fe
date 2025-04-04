@@ -66,6 +66,10 @@ export default function Themes() {
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
       backgroundColor: "#e4f2ff",
+      // maxWidth: "90vw", // максимум 90% ширины окна
+      // maxHeight: "90vh", // максимум 90% высоты окна
+      // overflow: "auto", // прокрутка при переполнении
+      // boxSizing: "border-box", // чтобы padding учитывался в размерах
     },
     overlay: {
       backgroundColor: "#rgba(228, 242, 255, 0.99)",
@@ -132,8 +136,6 @@ export default function Themes() {
         playerName,
         5 - selectedFrame,
         socket.id
-        // selectedTheme,
-        // selectedMovie
       );
       console.log("emitted:", session, playerName, 5 - selectedFrame);
     });
@@ -143,7 +145,7 @@ export default function Themes() {
       setTimeout(() => {
         setPlayerName(null);
         setPlayerAnswer(null);
-      }, 4000);
+      }, 3000);
     });
 
     socket.on("round_end", () => {
@@ -183,7 +185,7 @@ export default function Themes() {
   }, []);
 
   return (
-    <div>
+    <div className={css.wrap}>
       {frames.length > 0 && (
         <Modal isOpen={isModalOpen} style={customStyles}>
           {playerName ? (
@@ -194,7 +196,14 @@ export default function Themes() {
               </h3>
             </div>
           ) : (
-            <img src={sortedUrls[selectedFrame]} />
+            <img
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                objectFit: "contain",
+              }}
+              src={sortedUrls[selectedFrame]}
+            />
           )}
         </Modal>
       )}
@@ -220,12 +229,10 @@ export default function Themes() {
       {themes != null && (
         <>
           <h2 className={css.menuTitle}>Выберите тему</h2>
-          <div className={css.scoreTable}>
+          <div className={css.themeTable}>
             {Object.entries(themes).map(([theme, movies]) => (
-              <div key={theme} className={css.playerWrap}>
-                <h3 className={css.playerName} width="90px">
-                  {theme}
-                </h3>
+              <div key={theme} className={css.themeWrap}>
+                <h3 className={css.playerName}>{theme}</h3>
                 <div className={css.moviesWrap}>
                   {movies.movies.map((movie, index) => (
                     <div key={index} className={css.btnWrap}>

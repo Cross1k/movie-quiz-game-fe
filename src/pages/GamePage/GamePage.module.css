@@ -4,6 +4,14 @@
 /* div {
   width: 1440px;
 } */
+.wrap {
+  padding: 20px 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .modalPlayer {
   display: flex;
   width: 40dvw;
@@ -32,7 +40,24 @@
 }
 
 .scoreTable {
+  width: 1440px;
   display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 20px;
+  border: 2px solid #000;
+  margin-bottom: 40px;
+  text-wrap: wrap;
+  align-content: center;
+  justify-content: space-around;
+  justify-self: center;
+}
+
+.themeTable {
+  /* max-width: 1440px; */
+  display: flex;
+  flex-wrap: wrap;
   gap: 2rem;
   padding: 1rem;
   background-color: #fff;
@@ -46,7 +71,17 @@
 
 .playerWrap {
   display: flex;
+  max-width: 296px;
+  gap: 20px;
+  border-radius: 20px;
+  border: 2px solid #000;
+  padding: 1rem;
+}
+
+.themeWrap {
+  display: flex;
   flex-direction: column;
+  max-width: 296px;
   gap: 20px;
   border-radius: 20px;
   border: 2px solid #000;
