@@ -15,14 +15,12 @@ export default function HostPage() {
   const [winnerName, setWinnerName] = useState(null);
   const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
-  // const [hostId, setHostId] = useState(localStorage.getItem("hostId") || null);
   const navigate = useNavigate();
 
   const { session } = useParams();
 
   const customStyles = {
     content: {
-      // padding: 0,
       top: "50%",
       left: "50%",
       right: "auto",
@@ -37,23 +35,15 @@ export default function HostPage() {
     },
   };
 
-  // let count = 0;
-
-  // useMemo(() => {
-  //   count;
-  // }, [count, themes]);
-
   useEffect(() => {
     setTimeout(() => {
       setSocketId(socket.id);
-      console.log(socketId);
       socket.emit("host_join_room", session, socketId);
-    }, 700);
+      console.log("asdf", socketId);
+    }, 300);
   }, [session, socketId]);
 
   useEffect(() => {
-    // socket.emit("host_join_room", session, socket.id);
-
     socket.on("player_answer", (id) => {
       console.log("Received answer:", id);
       setPlayerName(id);
@@ -75,13 +65,16 @@ export default function HostPage() {
     });
     return () => {
       socket.off("player_answer");
-      // socket.off("player_answer");
       socket.off("all_themes");
     };
   }, [navigate, session]);
 
   useEffect(() => {
-    connectSocket();
+    if (!socket.connected) {
+      setTimeout(() => {
+        connectSocket();
+      }, 500);
+    }
 
     return () => {
       disconnectSocket();
@@ -104,7 +97,6 @@ export default function HostPage() {
     setPlayerName(null);
     setIsAnswering(false);
   };
-  // let count = 0;
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
     setCount(count + 1);
@@ -133,6 +125,7 @@ export default function HostPage() {
     }, 400);
   };
 
+  if (!socketId) return <div>loading...</div>;
   return (
     <div className={css.wrap}>
       <Modal isOpen={gameEnd} style={customStyles}>

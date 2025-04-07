@@ -13,13 +13,12 @@ const Home = () => {
   const findURL = window.location.href; // use it on prod
 
   useEffect(() => {
-    // connectSocket();
-
-    setTimeout(async () => {
+    setTimeout(() => {
       setSessionId(socket.id);
+
       socket.emit("create_session", sessionId);
       console.log("my id:", sessionId);
-    }, 700);
+    }, 300);
 
     socket.on("start_game", (room) => {
       console.log("navigated to", room);
@@ -28,13 +27,14 @@ const Home = () => {
     return () => {
       socket.off("home_page");
       socket.off("start_game");
-
-      // disconnectSocket();
     };
   }, [navigate, sessionId]);
 
   useEffect(() => {
-    connectSocket();
+    setTimeout(() => {
+      connectSocket();
+    }, 400);
+
     return () => {
       disconnectSocket();
     };
@@ -57,8 +57,7 @@ const Home = () => {
           <h2 className={css.menuTitle}>Ведущий</h2>
         </div>
         {players.map((player) => (
-          <div className={css.qrPlayer}>
-            {" "}
+          <div className={css.qrPlayer} key={player}>
             <QRCodeCanvas
               className={css.qrcode}
               value={`${findURL}player/${player}/${sessionId}`}

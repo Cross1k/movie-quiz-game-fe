@@ -21,9 +21,12 @@ export default function Player() {
 
   const navigate = useNavigate();
 
+  useMemo(() => {
+    id, session;
+  }, [id, session]);
+
   const customStyles = {
     content: {
-      // padding: 0,
       top: "50%",
       left: "50%",
       right: "auto",
@@ -44,14 +47,29 @@ export default function Player() {
     setTimeout(() => {
       setSocketId(socket.id);
       console.log(socketId);
-      socket.emit("player_join_room", session, names[id - 1], socketId);
-    }, 700);
+      if (socketId) {
+        socket.emit("player_join_room", session, names[id - 1], socketId);
+        socket.emit("round_request", session);
+        socket.emit("who_answer", session);
+      }
+    }, 600);
   }, [id, names, session, socketId]);
 
   useEffect(() => {
+    socket.on("is_started", (bool) => {
+      setIsButtonDisabled(!bool);
+      console.log("round is", bool);
+    });
+
+    socket.on("who_answer", (name) => {
+      if (name === null) return;
+      setPlayerName(name);
+      setIsButtonDisabled(true);
+      setIsModalOpen(true);
+    });
+
     socket.on("player_answer", (id) => {
       setPlayerName(id);
-
       setIsButtonDisabled(true);
       setIsModalOpen(true);
     });
@@ -103,7 +121,6 @@ export default function Player() {
     });
 
     return () => {
-      // socket.off("player_join_room");
       socket.off("player_answer");
       socket.off("your_points");
       socket.off("answer_yes");
@@ -115,16 +132,27 @@ export default function Player() {
   }, [id, names, navigate, session]);
 
   useEffect(() => {
-    connectSocket();
+    if (!socket.connected) {
+      setTimeout(() => {
+        connectSocket();
+      }, 500);
+    }
+
     return () => {
       disconnectSocket();
     };
   }, [session]);
 
   const handleAnswer = () => {
-    socket.emit("player_answer", session, names[id - 1]);
-    setIsButtonDisabled(true);
+    if (socketId) {
+      socket.emit("player_answer", session, names[id - 1]);
+      setIsButtonDisabled(true);
+    }
   };
+
+  if (!socketId) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className={css.wrap}>
@@ -142,9 +170,7 @@ export default function Player() {
           </p>
         </div>
       </Modal>
-      <h1 className={css.title}>
-        Команда <bold>{names[id - 1]}</bold>
-      </h1>
+      <h1 className={css.title}>Команда {names[id - 1]}</h1>
       <button
         type="button"
         onClick={handleAnswer}

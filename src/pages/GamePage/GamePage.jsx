@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
@@ -11,7 +11,10 @@ const initialState = [
 ];
 
 export default function Themes() {
-  const [themes, setThemes] = useState([]);
+  const { session } = useParams();
+  const navigate = useNavigate();
+
+  const [themes, setThemes] = useState({});
   const [frames, setFrames] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState(0);
@@ -23,96 +26,66 @@ export default function Themes() {
   const [winnerPts, setWinnerPts] = useState(null);
   const [socketId, setSocketId] = useState(null);
 
-  const navigate = useNavigate();
+  const getFileName = (url) => url.split("/").pop().split("_")[0];
 
-  const { session } = useParams();
+  const sortedUrls = useMemo(
+    () =>
+      [...frames].sort((a, b) => {
+        const fileNameA = getFileName(a);
+        const fileNameB = getFileName(b);
 
-  function getFileName(url) {
-    const parts = url.split("/");
-    const lastPart = parts[parts.length - 1];
-    return lastPart.split("_")[0];
-  }
+        if (fileNameA === "logo") return 1;
+        if (fileNameB === "logo") return -1;
 
-  // Функция для извлечения числа из имени файла
-  function getNumberFromFileName(fileName) {
-    const match = fileName.match(/(\d+)pts/);
-    return match ? parseInt(match[1]) : -1; // -1 для нечисловых значений
-  }
+        const numberA = parseInt(fileNameA.match(/\d+/)[0] || -1, 10);
+        const numberB = parseInt(fileNameB.match(/\d+/)[0] || -1, 10);
 
-  // Сортируем массив
-  const sortedUrls = [...frames].sort((a, b) => {
-    const fileNameA = getFileName(a);
-    const fileNameB = getFileName(b);
+        return numberB - numberA;
+      }),
+    [frames]
+  );
 
-    // Проверяем специальный случай для "logo" - помещаем его в конец
-    if (fileNameA === "logo") return 1;
-    if (fileNameB === "logo") return -1;
-
-    // Извлекаем числа
-    const numberA = getNumberFromFileName(fileNameA);
-    const numberB = getNumberFromFileName(fileNameB);
-
-    // Сортируем по убыванию (от большего к меньшему)
-    return numberB - numberA;
-  });
-
-  const customStyles = {
-    content: {
-      padding: 0,
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      backgroundColor: "#e4f2ff",
-      // maxWidth: "90vw", // максимум 90% ширины окна
-      // maxHeight: "90vh", // максимум 90% высоты окна
-      // overflow: "auto", // прокрутка при переполнении
-      // boxSizing: "border-box", // чтобы padding учитывался в размерах
-    },
-    overlay: {
-      backgroundColor: "#rgba(228, 242, 255, 0.99)",
-      backdropFilter: "blur(8px)",
-    },
-  };
+  const customStyles = useMemo(
+    () => ({
+      content: {
+        padding: 0,
+        top: "50%",
+        left: "50%",
+        right: "auto",
+        bottom: "auto",
+        marginRight: "-50%",
+        transform: "translate(-50%, -50%)",
+        backgroundColor: "#e4f2ff",
+      },
+      overlay: {
+        backgroundColor: "#rgba(228, 242, 255, 0.99)",
+        backdropFilter: "blur(8px)",
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
-    setTimeout(() => {
-      setSocketId(socket.id);
-      console.log(session, socketId);
-      socket.emit("game_join_room", session, socketId);
-      socket.emit("get_themes", session);
-    }, 700);
-  }, [socketId, session]);
+    setSocketId(socket.id);
+    socket.emit("game_join_room", session, socketId);
+    socket.emit("get_themes", session);
+  }, [session, socketId]);
 
   useEffect(() => {
     if (!session) return;
 
-    socket.on("all_themes", (themes) => {
-      setThemes(themes);
-      console.log(themes);
-    });
+    socket.on("all_themes", (themes) => setThemes(themes));
 
     socket.on("all_frames", (frame) => {
       setFrames(frame);
       setIsModalOpen(true);
     });
 
-    socket.on("change_frame", () => {
-      setSelectedFrame(selectedFrame + 1);
-    });
+    socket.on("change_frame", () => setSelectedFrame((prev) => prev + 1));
 
-    socket.on("all_points", (score) => {
-      console.log("game received points");
-      setScoreTable(score);
-      console.log(score);
-    });
+    socket.on("all_points", (score) => setScoreTable(score));
 
-    socket.on("player_answer", (playerName) => {
-      setPlayerName(playerName);
-      console.log("playerName", playerName);
-    });
+    socket.on("player_answer", (playerName) => setPlayerName(playerName));
 
     socket.on("answer_yes", () => {
       setPlayerAnswer("верно!");
@@ -126,18 +99,6 @@ export default function Themes() {
         setSelectedFrame(0);
         setFrames([]);
       }, 5000);
-      console.log("got logo");
-    });
-
-    socket.on("get_points", (playerName) => {
-      socket.emit(
-        "player_points",
-        session,
-        playerName,
-        5 - selectedFrame,
-        socket.id
-      );
-      console.log("emitted:", session, playerName, 5 - selectedFrame);
     });
 
     socket.on("answer_no", () => {
@@ -153,6 +114,7 @@ export default function Themes() {
         setIsModalOpen(false);
         setSelectedFrame(0);
         setFrames([]);
+        socket.emit("get_themes", session);
       }, 3000);
     });
 
@@ -175,10 +137,13 @@ export default function Themes() {
       socket.off("get_points");
       socket.off("all_themes");
     };
-  }, [navigate, selectedFrame, session]);
+  }, [navigate, session, socketId]);
 
   useEffect(() => {
     connectSocket();
+    setTimeout(() => {
+      connectSocket();
+    }, 400);
     return () => {
       disconnectSocket();
     };
@@ -226,7 +191,7 @@ export default function Themes() {
         ))}
       </div>
 
-      {themes != null && (
+      {Object.keys(themes).length > 0 && (
         <>
           <h2 className={css.menuTitle}>Выберите тему</h2>
           <div className={css.themeTable}>
@@ -237,9 +202,7 @@ export default function Themes() {
                   {movies.movies.map((movie, index) => (
                     <div key={index} className={css.btnWrap}>
                       <button disabled={movie.guessed} className={css.btn}>
-                        {!movie.guessed
-                          ? `${movie.index + 1}`
-                          : `${movie.name}`}
+                        {movie.index}
                       </button>
                     </div>
                   ))}
