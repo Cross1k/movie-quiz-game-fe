@@ -140,10 +140,11 @@ export default function Themes() {
   }, [navigate, session, socketId]);
 
   useEffect(() => {
-    connectSocket();
-    setTimeout(() => {
-      connectSocket();
-    }, 400);
+    if (!socket.connected) {
+      setTimeout(() => {
+        connectSocket();
+      }, 500);
+    }
     return () => {
       disconnectSocket();
     };
