@@ -3,6 +3,7 @@ import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import css from "./HostPage.module.css";
+import { ThreeCircles } from "react-loader-spinner";
 
 let endGameBtnOff = true;
 export default function HostPage() {
@@ -15,6 +16,8 @@ export default function HostPage() {
   const [winnerName, setWinnerName] = useState(null);
   const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+
   const navigate = useNavigate();
 
   const { session } = useParams();
@@ -39,20 +42,17 @@ export default function HostPage() {
     setTimeout(() => {
       setSocketId(socket.id);
       socket.emit("host_join_room", session, socketId);
-      console.log("asdf", socketId);
     }, 300);
   }, [session, socketId]);
 
   useEffect(() => {
     socket.on("player_answer", (id) => {
-      console.log("Received answer:", id);
       setPlayerName(id);
       setIsAnswering(true);
     });
 
     socket.on("all_themes", (themes) => {
       setThemes(themes);
-      console.log(themes);
     });
 
     socket.on("end_game", (winner, pts) => {
@@ -100,7 +100,6 @@ export default function HostPage() {
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
     setCount(count + 1);
-    console.log(count);
     if (count >= 5) {
       socket.emit("round_end", session);
       setCount(1);
@@ -112,38 +111,54 @@ export default function HostPage() {
   };
 
   const handleStartGame = () => {
-    setTimeout(() => {
-      socket.emit("start_game", session);
-      console.log("click", session);
-    }, 400);
-    endGameBtnOff = false;
+    socket.emit("start_game", session);
+    setIsButtonDisabled(false);
   };
 
   const handleEndGame = () => {
-    setTimeout(() => {
-      socket.emit("end_game", session);
-    }, 400);
+    socket.emit("end_game", session);
   };
 
-  if (!socketId) return <div>loading...</div>;
+  if (!socketId)
+    return (
+      <div>
+        <ThreeCircles
+          visible={true}
+          height="100"
+          width="100"
+          color="#a4f2ff"
+          ariaLabel="three-circles-loading"
+          wrapperStyle={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+          wrapperClass=""
+        />
+      </div>
+    );
   return (
     <div className={css.wrap}>
       <Modal isOpen={gameEnd} style={customStyles}>
         <>
           <h2>{winnerName}</h2>
-
           <h3>Счет: {winnerPts}</h3>
         </>
       </Modal>
       <div>
         <h1 className={css.title}>Страница ведущего</h1>
-        <button onClick={handleStartGame} className={css.btn}>
+        <button
+          onClick={handleStartGame}
+          className={css.btn}
+          disabled={!isButtonDisabled}
+        >
           Старт
         </button>
         <button
           onClick={handleEndGame}
           className={css.btn}
-          disabled={endGameBtnOff}
+          disabled={isButtonDisabled}
         >
           Конец игры
         </button>
@@ -170,33 +185,46 @@ export default function HostPage() {
           )}
         </Modal>
       </div>
-      {themes != null && (
-        <>
-          <div>
-            {Object.entries(themes).map(([theme, movies]) => (
-              <div key={theme}>
-                <strong className={css.playerName}>{theme}</strong>
-                <div>
-                  {movies.movies.map((movie, index) => (
-                    <div key={index}>
-                      <button
-                        className={css.btn}
-                        onClick={(e) => {
-                          socket.emit("get_frames", session, theme, movie.name);
-                          socket.emit("start_round", session);
-                          setIsModalOpen(true);
-                          e.target.disabled = true;
-                        }}
-                      >
-                        {`${movie.index + 1}: ${movie.name}`}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+      {themes ? (
+        <div>
+          {Object.entries(themes).map(([theme, movies]) => (
+            <div key={theme}>
+              <strong className={css.playerName}>{theme}</strong>
+              <div>
+                {movies.movies.map((movie, index) => (
+                  <div key={index}>
+                    <button
+                      className={css.btn}
+                      onClick={(e) => {
+                        socket.emit("get_frames", session, theme, movie.name);
+                        socket.emit("start_round", session);
+                        setIsModalOpen(true);
+                        e.target.disabled = true;
+                      }}
+                    >
+                      {`${movie.index + 1}: ${movie.name}`}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ThreeCircles
+          visible={!isButtonDisabled}
+          height="100"
+          width="100"
+          color="#a4f2ff"
+          ariaLabel="three-circles-loading"
+          wrapperStyle={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+          wrapperClass=""
+        />
       )}
     </div>
   );

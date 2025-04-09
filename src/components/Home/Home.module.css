@@ -2,9 +2,23 @@
   margin-bottom: 30px;
 }
 
+.scannedQR {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 .menuTitle {
   font-size: 2.5rem;
-  margin-bottom: 0.75rem;
+  border: 2px solid #000;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background-color: #fff;
 }
 
 .title {
@@ -15,14 +29,42 @@
 
 .wrap {
   display: flex;
+  flex-direction: column;
   gap: 30px;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
 }
 
 .qrPlayer {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+}
+
+.qwe {
+  display: flex;
+  gap: 1rem;
+}
+
+.logoWrap {
+  position: relative;
+}
+
+.logo {
+  display: block;
+  font-size: 3rem;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.logoHost {
+  display: block;
+  font-size: 5rem;
+  position: absolute;
+  top: 41%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useWindowSize } from "@react-hook/window-size";
+
 import { useNavigate, useParams } from "react-router-dom";
+import { ThreeCircles } from "react-loader-spinner";
 import Modal from "react-modal";
+import Confetti from "react-confetti";
 
 import css from "./PlayerPage.module.css";
 
@@ -18,7 +22,7 @@ export default function Player() {
   const [socketId, setSocketId] = useState(null);
 
   const { id, session } = useParams();
-
+  const [width, height] = useWindowSize();
   const navigate = useNavigate();
 
   useMemo(() => {
@@ -46,9 +50,8 @@ export default function Player() {
   useEffect(() => {
     setTimeout(() => {
       setSocketId(socket.id);
-      console.log(socketId);
       if (socketId) {
-        socket.emit("player_join_room", session, names[id - 1], socketId);
+        socket.emit("player_join_room", session, names[id - 1], id, socketId);
         socket.emit("round_request", session);
         socket.emit("who_answer", session);
       }
@@ -58,7 +61,6 @@ export default function Player() {
   useEffect(() => {
     socket.on("is_started", (bool) => {
       setIsButtonDisabled(!bool);
-      console.log("round is", bool);
     });
 
     socket.on("who_answer", (name) => {
@@ -117,7 +119,7 @@ export default function Player() {
       setGameEnd(true);
       setTimeout(() => {
         navigate("/");
-      }, 4000);
+      }, 6000);
     });
 
     return () => {
@@ -151,15 +153,33 @@ export default function Player() {
   };
 
   if (!socketId) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <ThreeCircles
+          visible={true}
+          height="100"
+          width="100"
+          color="#a4f2ff"
+          ariaLabel="three-circles-loading"
+          wrapperStyle={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+          wrapperClass=""
+        />
+      </div>
+    );
   }
 
   return (
     <div className={css.wrap}>
       <Modal isOpen={gameEnd} style={customStyles}>
         <>
+          <Confetti className={css.conf} numberOfPieces={2000} />
+          <h2>Победитель</h2>
           <h2>{winnerName}</h2>
-
           <h3>Счет: {winnerPts}</h3>
         </>
       </Modal>

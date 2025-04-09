@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
-import { useNavigate, useParams } from "react-router-dom";
-import Modal from "react-modal";
-import css from "./GamePage.module.css";
 
-// const initialState = [
-//   { socketId: null, points: 0, name: "Черепашки" },
-//   { socketId: null, points: 0, name: "Черепушки" },
-//   { socketId: null, points: 0, name: "Черемушки" },
-// ];
+import Modal from "react-modal";
+import Confetti from "react-confetti";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
+import css from "./GamePage.module.css";
+import { ThreeCircles } from "react-loader-spinner";
 
 export default function Themes() {
   const { session } = useParams();
@@ -58,7 +56,7 @@ export default function Themes() {
         backgroundColor: "#e4f2ff",
       },
       overlay: {
-        backgroundColor: "#rgba(228, 242, 255, 0.99)",
+        backgroundColor: "rgba(228, 242, 255, 0.99)",
         backdropFilter: "blur(8px)",
       },
     }),
@@ -70,18 +68,13 @@ export default function Themes() {
       setSocketId(socket.id);
       socket.emit("game_join_room", session, socketId);
       socket.emit("get_themes", session);
-      console.log(`transfer ${socketId}, ${session}`);
     }, 300);
   }, [socketId, session]);
 
   useEffect(() => {
     if (!session) return;
     if (socket.connected) {
-      socket.on(
-        "all_themes",
-        (themes) => setThemes(themes),
-        console.log(themes)
-      );
+      socket.on("all_themes", (themes) => setThemes(themes));
 
       socket.on("all_frames", (frame) => {
         setFrames(frame);
@@ -89,20 +82,8 @@ export default function Themes() {
       });
 
       socket.on("change_frame", () => setSelectedFrame((prev) => prev + 1));
-      // const setPoints = () => {
-      //   socket.on(
-      //     "all_points",
-      //     (score) => setScoreTable(score),
-      //     console.log("all_point")
-      //   );
-      // };
 
-      socket.on(
-        "all_points",
-        (score) => setScoreTable(score),
-        console.log("all_point")
-      );
-      // if (!scoreTable) setPoints();
+      socket.on("all_points", (score) => setScoreTable(score));
 
       socket.on("player_answer", (playerName) => setPlayerName(playerName));
 
@@ -136,7 +117,6 @@ export default function Themes() {
           5 - selectedFrame,
           socket.id
         );
-        console.log("emitted:", session, playerName, 5 - selectedFrame);
       });
 
       socket.on("round_end", () => {
@@ -154,7 +134,7 @@ export default function Themes() {
         setGameEnd(true);
         setTimeout(() => {
           navigate("/");
-        }, 4000);
+        }, 6000);
       });
     }
     return () => {
@@ -180,9 +160,6 @@ export default function Themes() {
     };
   }, []);
 
-  // if (!scoreTable) {
-  //   return <div>Loading...</div>;
-  // }
   return (
     <div className={css.wrap}>
       {frames.length > 0 && (
@@ -208,49 +185,71 @@ export default function Themes() {
       )}
       <Modal isOpen={gameEnd} style={customStyles}>
         <div className={css.modalEnd}>
+          <Confetti numberOfPieces={1700} className={css.conf} />
+          <h2 className={css.menuTitle}>Победитель</h2>
           <h2 className={css.menuTitle}>{winnerName}</h2>
-
           <h3 className={css.menuTitle}>Счет: {winnerPts}</h3>
         </div>
       </Modal>
 
       <h1 className={css.title}>Страница игры</h1>
-      <h2 className={css.menuTitle}>Таблица результатов</h2>
-      <div className={css.scoreTable}>
-        {scoreTable ? (
-          scoreTable.map((player) => (
-            <div key={player.name} className={css.playerWrap}>
-              <h3 className={css.playerName}>
-                {player.name} {player.logo}
-              </h3>
-              <h3 className={css.playerName}>{player.points}</h3>
-            </div>
-          ))
-        ) : (
-          <div>Loading...</div>
-        )}
-      </div>
-
-      {Object.keys(themes).length > 0 && (
+      {scoreTable ? (
         <>
-          <h2 className={css.menuTitle}>Выберите тему</h2>
-          <div className={css.themeTable}>
-            {Object.entries(themes).map(([theme, movies]) => (
-              <div key={theme} className={css.themeWrap}>
-                <h3 className={css.playerName}>{theme}</h3>
-                <div className={css.moviesWrap}>
-                  {movies.movies.map((movie, index) => (
-                    <div key={index} className={css.btnWrap}>
-                      <button disabled={movie.guessed} className={css.btn}>
-                        {movie.guessed ? movie.whoGuessed : movie.index}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+          <h2 className={css.menuTitle}>Таблица результатов</h2>
+          <div className={css.scoreTable}>
+            {scoreTable.map((player) => (
+              <div key={player.name} className={css.playerWrap}>
+                <h3 className={css.playerName}>
+                  {player.name} {player.logo}
+                </h3>
+                <h3 className={css.playerName}>{player.points}</h3>
               </div>
             ))}
           </div>
+          <h2 className={css.menuTitle}>Выберите тему</h2>
+          {Object.keys(themes).length > 0 ? (
+            <>
+              <div className={css.themeTable}>
+                {Object.entries(themes).map(([theme, movies]) => (
+                  <div key={theme} className={css.themeWrap}>
+                    <h3 className={css.playerName}>{theme}</h3>
+                    <div className={css.moviesWrap}>
+                      {movies.movies.map((movie, index) => (
+                        <div key={index} className={css.btnWrap}>
+                          <button disabled={movie.guessed} className={css.btn}>
+                            {movie.guessed ? movie.whoGuessed : movie.index}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <ThreeCircles
+              visible={true}
+              height="100"
+              width="100"
+              color="#a4f2ff"
+              ariaLabel="three-circles-loading"
+              wrapperStyle={{}}
+              wrapperClass=""
+            />
+          )}
         </>
+      ) : (
+        <div>
+          <ThreeCircles
+            visible={true}
+            height="100"
+            width="100"
+            color="#a4f2ff"
+            ariaLabel="three-circles-loading"
+            wrapperStyle={{}}
+            wrapperClass=""
+          />
+        </div>
       )}
     </div>
   );

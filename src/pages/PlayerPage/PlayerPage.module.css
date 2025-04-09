@@ -4,7 +4,6 @@
 }
 
 .title {
-  /* margin: 0 auto; */
   text-align: center;
   font-size: 3rem;
   margin-bottom: 1rem;
@@ -33,12 +32,15 @@
   border: 1px solid;
 }
 
+.conf {
+  width: 100%;
+  height: 100%;
+}
+
 .modalPlayer {
   display: flex;
   flex-direction: column;
   width: 100%;
-  /* width: 40dvw; */
-  /* height: 30dvh; */
   background-color: #e4f2ff;
   justify-content: center;
   align-items: center;
