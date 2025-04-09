@@ -3,9 +3,8 @@ import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import css from "./HostPage.module.css";
-import { ThreeCircles } from "react-loader-spinner";
+import HashLoader from "react-spinners/HashLoader";
 
-let endGameBtnOff = true;
 export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
   const [isAnswering, setIsAnswering] = useState(false);
@@ -33,7 +32,7 @@ export default function HostPage() {
       backgroundColor: "#e4f2ff",
     },
     overlay: {
-      backgroundColor: "#rgba(228, 242, 255, 0.99)",
+      backgroundColor: "rgba(228, 242, 255, 0.4)",
       backdropFilter: "blur(8px)",
     },
   };
@@ -46,6 +45,7 @@ export default function HostPage() {
   }, [session, socketId]);
 
   useEffect(() => {
+    if (!socket.connected) return;
     socket.on("player_answer", (id) => {
       setPlayerName(id);
       setIsAnswering(true);
@@ -122,19 +122,16 @@ export default function HostPage() {
   if (!socketId)
     return (
       <div>
-        <ThreeCircles
-          visible={true}
-          height="100"
-          width="100"
-          color="#a4f2ff"
-          ariaLabel="three-circles-loading"
-          wrapperStyle={{
+        <HashLoader
+          size={100}
+          color="#aabbff"
+          speedMultiplier={0.85}
+          style={{
             position: "absolute",
-            top: "50%",
             left: "50%",
-            transform: "translate(-50%, -50%)",
+            top: "50%",
+            transform: "rotate(20deg)",
           }}
-          wrapperClass=""
         />
       </div>
     );
@@ -211,19 +208,17 @@ export default function HostPage() {
           ))}
         </div>
       ) : (
-        <ThreeCircles
-          visible={!isButtonDisabled}
-          height="100"
-          width="100"
-          color="#a4f2ff"
-          ariaLabel="three-circles-loading"
-          wrapperStyle={{
+        <HashLoader
+          size={100}
+          color="#aabbff"
+          speedMultiplier={0.85}
+          style={{
             position: "absolute",
-            top: "50%",
             left: "50%",
-            transform: "translate(-50%, -50%)",
+            top: "50%",
+            visibility: isButtonDisabled ? "hidden" : "visible",
+            transform: "rotate(20deg)",
           }}
-          wrapperClass=""
         />
       )}
     </div>

@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import css from "./GamePage.module.css";
-import { ThreeCircles } from "react-loader-spinner";
+import HashLoader from "react-spinners/HashLoader.js";
 
 export default function Themes() {
   const { session } = useParams();
@@ -56,7 +56,7 @@ export default function Themes() {
         backgroundColor: "#e4f2ff",
       },
       overlay: {
-        backgroundColor: "rgba(228, 242, 255, 0.99)",
+        backgroundColor: "rgba(228, 242, 255, 0.4)",
         backdropFilter: "blur(8px)",
       },
     }),
@@ -66,6 +66,7 @@ export default function Themes() {
   useEffect(() => {
     setTimeout(() => {
       setSocketId(socket.id);
+      if (!socket.connect) return;
       socket.emit("game_join_room", session, socketId);
       socket.emit("get_themes", session);
     }, 300);
@@ -73,70 +74,70 @@ export default function Themes() {
 
   useEffect(() => {
     if (!session) return;
-    if (socket.connected) {
-      socket.on("all_themes", (themes) => setThemes(themes));
+    if (!socket.connected) return;
+    socket.on("all_themes", (themes) => setThemes(themes), console.log(themes));
 
-      socket.on("all_frames", (frame) => {
-        setFrames(frame);
-        setIsModalOpen(true);
-      });
+    socket.on("all_frames", (frame) => {
+      setFrames(frame);
+      setIsModalOpen(true);
+    });
 
-      socket.on("change_frame", () => setSelectedFrame((prev) => prev + 1));
+    socket.on("change_frame", () => setSelectedFrame((prev) => prev + 1));
 
-      socket.on("all_points", (score) => setScoreTable(score));
+    socket.on("all_points", (score) => setScoreTable(score));
 
-      socket.on("player_answer", (playerName) => setPlayerName(playerName));
+    socket.on("player_answer", (playerName) => setPlayerName(playerName));
 
-      socket.on("answer_yes", () => {
-        setPlayerAnswer("верно!");
-        setTimeout(() => {
-          setPlayerName(null);
-          setPlayerAnswer(null);
-          setSelectedFrame(5);
-        }, 1000);
-        setTimeout(() => {
-          setIsModalOpen(false);
-          setSelectedFrame(0);
-          setFrames([]);
-        }, 5000);
-      });
+    socket.on("answer_yes", () => {
+      setPlayerAnswer("верно!");
+      setTimeout(() => {
+        setPlayerName(null);
+        setPlayerAnswer(null);
+        setSelectedFrame(5);
+      }, 1000);
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setSelectedFrame(0);
+        setFrames([]);
+      }, 5000);
+    });
 
-      socket.on("answer_no", () => {
-        setPlayerAnswer("не верно!");
-        setTimeout(() => {
-          setPlayerName(null);
-          setPlayerAnswer(null);
-        }, 3000);
-      });
+    socket.on("answer_no", () => {
+      setPlayerAnswer("не верно!");
+      setTimeout(() => {
+        setPlayerName(null);
+        setPlayerAnswer(null);
+      }, 3000);
+    });
 
-      socket.on("get_points", (playerName) => {
-        socket.emit(
-          "player_points",
-          session,
-          playerName,
-          5 - selectedFrame,
-          socket.id
-        );
-      });
+    socket.on("get_points", (playerName) => {
+      socket.emit(
+        "player_points",
+        session,
+        playerName,
+        5 - selectedFrame,
+        socket.id
+      );
+    });
 
-      socket.on("round_end", () => {
-        setTimeout(() => {
-          setIsModalOpen(false);
-          setSelectedFrame(0);
-          setFrames([]);
-        }, 3000);
-        socket.emit("get_themes", session);
-      });
+    socket.on("round_end", () => {
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setSelectedFrame(0);
+        setFrames([]);
+      }, 3000);
+      socket.emit("get_themes", session);
+    });
 
-      socket.on("end_game", (winner, pts) => {
-        setWinnerName(winner);
-        setWinnerPts(pts);
-        setGameEnd(true);
-        setTimeout(() => {
-          navigate("/");
-        }, 6000);
-      });
-    }
+    socket.on("end_game", (winner, pts) => {
+      setWinnerName(winner);
+      setWinnerPts(pts);
+      setGameEnd(true);
+      setTimeout(() => {
+        navigate("/");
+      }, 6000);
+    });
+
     return () => {
       socket.off("all_frames");
       socket.off("change_frame");
@@ -147,7 +148,7 @@ export default function Themes() {
       socket.off("get_points");
       socket.off("all_themes");
     };
-  }, [navigate, session, socketId, scoreTable, themes, selectedFrame]);
+  }, [navigate, selectedFrame, session, themes]);
 
   useEffect(() => {
     if (!socket.connected) {
@@ -227,27 +228,31 @@ export default function Themes() {
               </div>
             </>
           ) : (
-            <ThreeCircles
-              visible={true}
-              height="100"
-              width="100"
-              color="#a4f2ff"
-              ariaLabel="three-circles-loading"
-              wrapperStyle={{}}
-              wrapperClass=""
+            <HashLoader
+              size={100}
+              color="#aabbff"
+              speedMultiplier={0.85}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "rotate(20deg)",
+              }}
             />
           )}
         </>
       ) : (
         <div>
-          <ThreeCircles
-            visible={true}
-            height="100"
-            width="100"
-            color="#a4f2ff"
-            ariaLabel="three-circles-loading"
-            wrapperStyle={{}}
-            wrapperClass=""
+          <HashLoader
+            size={100}
+            color="#aabbff"
+            speedMultiplier={0.85}
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "rotate(20deg)",
+            }}
           />
         </div>
       )}

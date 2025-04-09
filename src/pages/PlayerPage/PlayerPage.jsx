@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useWindowSize } from "@react-hook/window-size";
 
 import { useNavigate, useParams } from "react-router-dom";
-import { ThreeCircles } from "react-loader-spinner";
 import Modal from "react-modal";
 import Confetti from "react-confetti";
 
 import css from "./PlayerPage.module.css";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
+import HashLoader from "react-spinners/HashLoader.js";
 
 export default function Player() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
@@ -22,7 +21,6 @@ export default function Player() {
   const [socketId, setSocketId] = useState(null);
 
   const { id, session } = useParams();
-  const [width, height] = useWindowSize();
   const navigate = useNavigate();
 
   useMemo(() => {
@@ -40,7 +38,7 @@ export default function Player() {
       backgroundColor: "#e4f2ff",
     },
     overlay: {
-      backgroundColor: "#rgba(228, 242, 255, 0.99)",
+      backgroundColor: "rgba(228, 242, 255, 0.4)",
       backdropFilter: "blur(8px)",
     },
   };
@@ -59,6 +57,7 @@ export default function Player() {
   }, [id, names, session, socketId]);
 
   useEffect(() => {
+    if (!socket.connected) return;
     socket.on("is_started", (bool) => {
       setIsButtonDisabled(!bool);
     });
@@ -155,19 +154,16 @@ export default function Player() {
   if (!socketId) {
     return (
       <div>
-        <ThreeCircles
-          visible={true}
-          height="100"
-          width="100"
-          color="#a4f2ff"
-          ariaLabel="three-circles-loading"
-          wrapperStyle={{
+        <HashLoader
+          size={100}
+          color="#aabbff"
+          speedMultiplier={0.85}
+          style={{
             position: "absolute",
-            top: "50%",
             left: "50%",
-            transform: "translate(-50%, -50%)",
+            top: "50%",
+            transform: "rotate(20deg)",
           }}
-          wrapperClass=""
         />
       </div>
     );
