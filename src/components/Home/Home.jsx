@@ -81,19 +81,21 @@ const Home = () => {
         <h1 className={css.title}>Quiz Movie Game</h1>
         {!hostConnected ? (
           <>
-            <div className={css.qrPlayer}>
-              <QRCodeCanvas
-                className={css.qrcode}
-                value={`${findURL}host/${sessionId}`}
-                // value={`http://192.168.88.73:5173/host/${sessionId}`}
-                size={300}
-                level="H"
-                marginSize={0}
-                padding={0}
-                session={sessionId}
-                bgColor="transparent"
-              />
-              <p className={css.logoHost}>🦄</p>
+            <div style={{ position: "relative" }}>
+              <div className={css.qrPlayer}>
+                <QRCodeCanvas
+                  className={css.qrcode}
+                  value={`${findURL}host/${sessionId}`}
+                  // value={`http://192.168.88.73:5173/host/${sessionId}`}
+                  size={300}
+                  level="H"
+                  marginSize={0}
+                  padding={0}
+                  session={sessionId}
+                  bgColor="transparent"
+                />
+                <p className={css.logoHost}>🦄</p>
+              </div>
               <h2 className={css.menuTitle}>Ведущий</h2>
             </div>
           </>
