@@ -75,7 +75,7 @@ export default function Themes() {
   useEffect(() => {
     if (!session) return;
     // if (!socket.connected) return;
-    socket.on("all_themes", (themes) => setThemes(themes), console.log(themes));
+    socket.on("all_themes", (themes) => setThemes(themes));
 
     socket.on("all_frames", (frame) => {
       setFrames(frame);

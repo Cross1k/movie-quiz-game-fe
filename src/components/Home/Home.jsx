@@ -22,14 +22,10 @@ const Home = () => {
       setSessionId(socket.id);
 
       socket.emit("create_session", sessionId);
-      console.log("my id:", sessionId);
+      // console.log("my id:", sessionId);
     }, 300);
 
     socket.on("check_host", (data) => {
-      console.log(
-        "check_host",
-        data.map((p) => p.logo)
-      );
       setPlayersLogo(data.map((p) => p.logo));
       setHostConnected(true);
     });
@@ -45,7 +41,6 @@ const Home = () => {
     });
 
     socket.on("start_game", (room) => {
-      console.log("navigated to", room);
       navigate(`/game/${room}`);
     });
     return () => {
@@ -54,9 +49,7 @@ const Home = () => {
     };
   }, [navigate, sessionId]);
 
-  useEffect(() => {
-    console.log("scannedQRs изменились:", playerId);
-  }, [playerId]);
+  useEffect(() => {}, [playerId]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -112,7 +105,6 @@ const Home = () => {
                       </div>
                     </div>
                   ) : (
-                    // console.log("scanned")
                     // Отображаем QR-код, если он еще не отсканирован
                     <div className={css.logoWrap}>
                       <QRCodeSVG
