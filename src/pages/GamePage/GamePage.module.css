@@ -103,11 +103,9 @@
 
 .moviesWrap {
   display: flex;
-  /* flex-direction: column; */
   gap: 8px;
   align-self: center;
   justify-content: space-between;
-  /* width: 240px; */
 }
 
 .btn {
@@ -117,4 +115,6 @@
 
 .btn:disabled {
   padding: 10px 9px;
+  background-color: #c4f2ffaa;
+  border-color: #000a;
 }

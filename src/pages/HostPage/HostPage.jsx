@@ -45,13 +45,14 @@ export default function HostPage() {
   }, [session, socketId]);
 
   useEffect(() => {
-    if (!socket.connected) return;
+    // socket.on("game_started", () => setIsButtonDisabled(false));
     socket.on("player_answer", (id) => {
       setPlayerName(id);
       setIsAnswering(true);
     });
 
     socket.on("all_themes", (themes) => {
+      setIsButtonDisabled(false);
       setThemes(themes);
     });
 
@@ -85,10 +86,10 @@ export default function HostPage() {
     socket.emit("answer_yes", session, playerName);
     setCount(1);
     setIsAnswering(false);
+    setPlayerName(null);
+    setIsModalOpen(false);
     setTimeout(() => {
       socket.emit("round_end", session);
-      setPlayerName(null);
-      setIsModalOpen(false);
     }, 3000);
   };
 
@@ -99,19 +100,18 @@ export default function HostPage() {
   };
   const handleChangeFrame = () => {
     socket.emit("change_frame", session);
-    setCount(count + 1);
+    setCount((p) => p + 1);
     if (count >= 5) {
       socket.emit("round_end", session);
       setCount(1);
       setIsAnswering(false);
-      setTimeout(() => {
-        setIsModalOpen(false);
-      }, 3000);
+      setIsModalOpen(false);
+      setPlayerName(null);
     }
   };
 
   const handleStartGame = () => {
-    socket.emit("start_game", session);
+    socket.emit("start_game", session, socketId);
     setIsButtonDisabled(false);
   };
 
@@ -192,6 +192,7 @@ export default function HostPage() {
                   <div key={index}>
                     <button
                       className={css.btn}
+                      disabled={movie.guessed}
                       onClick={(e) => {
                         socket.emit("get_frames", session, theme, movie.name);
                         socket.emit("start_round", session);

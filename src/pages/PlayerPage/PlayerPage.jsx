@@ -57,7 +57,6 @@ export default function Player() {
   }, [id, names, session, socketId]);
 
   useEffect(() => {
-    if (!socket.connected) return;
     socket.on("is_started", (bool) => {
       setIsButtonDisabled(!bool);
     });

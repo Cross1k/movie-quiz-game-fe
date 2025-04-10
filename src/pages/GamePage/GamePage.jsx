@@ -66,7 +66,7 @@ export default function Themes() {
   useEffect(() => {
     setTimeout(() => {
       setSocketId(socket.id);
-      if (!socket.connect) return;
+      if (!socket.connected) return;
       socket.emit("game_join_room", session, socketId);
       socket.emit("get_themes", session);
     }, 300);
@@ -74,7 +74,7 @@ export default function Themes() {
 
   useEffect(() => {
     if (!session) return;
-    if (!socket.connected) return;
+    // if (!socket.connected) return;
     socket.on("all_themes", (themes) => setThemes(themes), console.log(themes));
 
     socket.on("all_frames", (frame) => {
@@ -187,9 +187,9 @@ export default function Themes() {
       <Modal isOpen={gameEnd} style={customStyles}>
         <div className={css.modalEnd}>
           <Confetti numberOfPieces={1700} className={css.conf} />
-          <h2 className={css.menuTitle}>Победитель</h2>
-          <h2 className={css.menuTitle}>{winnerName}</h2>
-          <h3 className={css.menuTitle}>Счет: {winnerPts}</h3>
+          <h2 className={css.menuTitle}>Поздравляем!</h2>
+          <h2 className={css.menuTitle}>{winnerName}!</h2>
+          <h3 className={css.menuTitle}>Счет: {winnerPts}!</h3>
         </div>
       </Modal>
 
@@ -218,7 +218,11 @@ export default function Themes() {
                       {movies.movies.map((movie, index) => (
                         <div key={index} className={css.btnWrap}>
                           <button disabled={movie.guessed} className={css.btn}>
-                            {movie.guessed ? movie.whoGuessed : movie.index}
+                            {movie.guessed
+                              ? movie.whoGuessed === null
+                                ? "💤"
+                                : movie.whoGuessed
+                              : movie.index}
                           </button>
                         </div>
                       ))}
