@@ -116,5 +116,6 @@
 .btn:disabled {
   padding: 10px 9px;
   background-color: #c4f2ffaa;
+  color: #000;
   border-color: #000a;
 }

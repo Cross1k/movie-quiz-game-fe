@@ -222,7 +222,7 @@ export default function Themes() {
                               ? movie.whoGuessed === null
                                 ? "💤"
                                 : movie.whoGuessed
-                              : movie.index}
+                              : movie.index + 1}
                           </button>
                         </div>
                       ))}

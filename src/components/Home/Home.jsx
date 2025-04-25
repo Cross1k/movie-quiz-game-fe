@@ -22,7 +22,7 @@ const Home = () => {
       setSessionId(socket.id);
 
       socket.emit("create_session", sessionId);
-      // console.log("my id:", sessionId);
+      console.log("my id:", sessionId);
     }, 300);
 
     socket.on("check_host", (data) => {

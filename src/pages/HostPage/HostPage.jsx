@@ -16,6 +16,8 @@ export default function HostPage() {
   const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+  const [IsNextFrameButtonDisabled, setIsNextFrameButtonDisabled] =
+    useState(true);
 
   const navigate = useNavigate();
 
@@ -87,8 +89,9 @@ export default function HostPage() {
     setCount(1);
     setIsAnswering(false);
     setPlayerName(null);
-    setIsModalOpen(false);
+    setIsNextFrameButtonDisabled(true);
     setTimeout(() => {
+      setIsModalOpen(false);
       socket.emit("round_end", session);
     }, 3000);
   };
@@ -105,8 +108,12 @@ export default function HostPage() {
       socket.emit("round_end", session);
       setCount(1);
       setIsAnswering(false);
-      setIsModalOpen(false);
+      setIsNextFrameButtonDisabled(true);
       setPlayerName(null);
+
+      setTimeout(() => {
+        setIsModalOpen(false);
+      }, 3000);
     }
   };
 
@@ -176,7 +183,11 @@ export default function HostPage() {
               </div>
             </div>
           ) : (
-            <button onClick={handleChangeFrame} className={css.btn}>
+            <button
+              onClick={handleChangeFrame}
+              className={css.btn}
+              disabled={IsNextFrameButtonDisabled}
+            >
               Следующий кадр ▶
             </button>
           )}
@@ -197,6 +208,7 @@ export default function HostPage() {
                         socket.emit("get_frames", session, theme, movie.name);
                         socket.emit("start_round", session);
                         setIsModalOpen(true);
+                        setIsNextFrameButtonDisabled(false);
                         e.target.disabled = true;
                       }}
                     >
