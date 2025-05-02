@@ -3,7 +3,8 @@ import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import css from "./HostPage.module.css";
-import HashLoader from "react-spinners/HashLoader";
+import Loader from "../../components/Loader/Loader.jsx";
+import customStyles from "../../utils/customStyles.js";
 
 export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
@@ -18,26 +19,12 @@ export default function HostPage() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [IsNextFrameButtonDisabled, setIsNextFrameButtonDisabled] =
     useState(true);
+  const [allBundles, setAllBundles] = useState(null);
+  const [chosenBundle, setChosenBundle] = useState(null);
 
   const navigate = useNavigate();
 
   const { session } = useParams();
-
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      backgroundColor: "#e4f2ff",
-    },
-    overlay: {
-      backgroundColor: "rgba(228, 242, 255, 0.4)",
-      backdropFilter: "blur(8px)",
-    },
-  };
 
   useEffect(() => {
     setTimeout(() => {
@@ -47,16 +34,25 @@ export default function HostPage() {
   }, [session, socketId]);
 
   useEffect(() => {
-    // socket.on("game_started", () => setIsButtonDisabled(false));
     socket.on("player_answer", (id) => {
       setPlayerName(id);
       setIsAnswering(true);
     });
 
-    socket.on("all_themes", (themes) => {
+    socket.once("all_themes", (themes, bundleName) => {
       setIsButtonDisabled(false);
       setThemes(themes);
+      setChosenBundle(bundleName);
+      console.log(bundleName);
     });
+
+    socket.on("all_bundles", (bundles) => {
+      setAllBundles(bundles);
+    });
+
+    // socket.on("set_bundle", (bundleTitle) => {
+    //   setChosenBundle(bundleTitle);
+    // });
 
     socket.on("end_game", (winner, pts) => {
       setWinnerName(winner);
@@ -68,7 +64,7 @@ export default function HostPage() {
     });
     return () => {
       socket.off("player_answer");
-      socket.off("all_themes");
+      // socket.off("all_themes");
     };
   }, [navigate, session]);
 
@@ -93,6 +89,7 @@ export default function HostPage() {
     setTimeout(() => {
       setIsModalOpen(false);
       socket.emit("round_end", session);
+      document.body.style.overflow = "";
     }, 3000);
   };
 
@@ -113,6 +110,7 @@ export default function HostPage() {
 
       setTimeout(() => {
         setIsModalOpen(false);
+        document.body.style.overflow = "";
       }, 3000);
     }
   };
@@ -129,110 +127,121 @@ export default function HostPage() {
   if (!socketId)
     return (
       <div>
-        <HashLoader
-          size={100}
-          color="#aabbff"
-          speedMultiplier={0.85}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "rotate(20deg)",
-          }}
-        />
+        <Loader />
       </div>
     );
   return (
     <div className={css.wrap}>
+      <h1 className={css.title}>Страница ведущего</h1>
+
       <Modal isOpen={gameEnd} style={customStyles}>
         <>
           <h2>{winnerName}</h2>
           <h3>Счет: {winnerPts}</h3>
         </>
       </Modal>
-      <div>
-        <h1 className={css.title}>Страница ведущего</h1>
-        <button
-          onClick={handleStartGame}
-          className={css.btn}
-          disabled={!isButtonDisabled}
-        >
-          Старт
-        </button>
-        <button
-          onClick={handleEndGame}
-          className={css.btn}
-          disabled={isButtonDisabled}
-        >
-          Конец игры
-        </button>
-      </div>
-      <div>
-        <Modal isOpen={isModalOpen} style={customStyles}>
-          {isAnswering ? (
-            <div className={css.modalPlayer}>
-              <h2 className={css.menuTitle}>Имя игрока:</h2>
-              <p className={css.playerName}>{playerName}</p>
-              <div>
-                <button onClick={handleGoodAnswer} className={css.btn}>
-                  Верно! 🟢
-                </button>
-                <button onClick={handleBadAnswer} className={css.btn}>
-                  Не верно! 🔴
-                </button>
-              </div>
+
+      <Modal isOpen={isModalOpen} style={customStyles}>
+        {isAnswering ? (
+          <div className={css.modalPlayer}>
+            <h2 className={css.menuTitle}>Имя игрока:</h2>
+            <p className={css.playerName}>{playerName}</p>
+            <div>
+              <button onClick={handleGoodAnswer} className={css.btn}>
+                Верно! 🟢
+              </button>
+              <button onClick={handleBadAnswer} className={css.btn}>
+                Не верно! 🔴
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleChangeFrame}
+            className={css.btn}
+            disabled={IsNextFrameButtonDisabled}
+          >
+            Следующий кадр ▶
+          </button>
+        )}
+      </Modal>
+
+      {chosenBundle !== null ? (
+        <>
+          {themes ? (
+            <div>
+              {Object.entries(themes).map(([theme, movies]) => (
+                <div key={theme}>
+                  <strong className={css.playerName}>{theme}</strong>
+                  <div>
+                    {movies.movies.map((movie, index) => (
+                      <div key={index}>
+                        <button
+                          className={css.btn}
+                          disabled={movie.guessed}
+                          onClick={(e) => {
+                            socket.emit(
+                              "get_frames",
+                              session,
+                              chosenBundle,
+                              theme,
+                              movie.name
+                            );
+                            socket.emit("start_round", session);
+                            setIsModalOpen(true);
+                            setIsNextFrameButtonDisabled(false);
+                            e.target.disabled = true;
+                            document.body.style.overflow = "hidden";
+                          }}
+                        >
+                          {`${movie.index + 1}: ${movie.name}`}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <button
-              onClick={handleChangeFrame}
-              className={css.btn}
-              disabled={IsNextFrameButtonDisabled}
-            >
-              Следующий кадр ▶
-            </button>
+            <Loader />
           )}
-        </Modal>
-      </div>
-      {themes ? (
-        <div>
-          {Object.entries(themes).map(([theme, movies]) => (
-            <div key={theme}>
-              <strong className={css.playerName}>{theme}</strong>
-              <div>
-                {movies.movies.map((movie, index) => (
-                  <div key={index}>
-                    <button
-                      className={css.btn}
-                      disabled={movie.guessed}
-                      onClick={(e) => {
-                        socket.emit("get_frames", session, theme, movie.name);
-                        socket.emit("start_round", session);
-                        setIsModalOpen(true);
-                        setIsNextFrameButtonDisabled(false);
-                        e.target.disabled = true;
-                      }}
-                    >
-                      {`${movie.index + 1}: ${movie.name}`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <button
+              onClick={handleEndGame}
+              className={css.btn}
+              disabled={isButtonDisabled}
+            >
+              Конец игры
+            </button>
+          </div>
+        </>
+      ) : allBundles ? (
+        <>
+          <button
+            onClick={handleStartGame}
+            className={css.btn}
+            disabled={!isButtonDisabled}
+          >
+            Старт
+          </button>
+          {!isButtonDisabled &&
+            allBundles.map((bundle) => (
+              <button
+                key={bundle.name}
+                className={css.btn}
+                onClick={() => {
+                  socket.emit("chose_bundle", session, bundle.name);
+                  setChosenBundle(bundle.name);
+                  console.log(bundle.name);
+                }}
+              >
+                {bundle.name}
+              </button>
+            ))}
+        </>
       ) : (
-        <HashLoader
-          size={100}
-          color="#aabbff"
-          speedMultiplier={0.85}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            visibility: isButtonDisabled ? "hidden" : "visible",
-            transform: "rotate(20deg)",
-          }}
-        />
+        <Loader />
       )}
     </div>
   );

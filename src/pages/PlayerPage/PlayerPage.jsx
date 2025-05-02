@@ -8,6 +8,7 @@ import css from "./PlayerPage.module.css";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import HashLoader from "react-spinners/HashLoader.js";
+import customStyles from "../../utils/customStyles.js";
 
 export default function Player() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
@@ -26,22 +27,6 @@ export default function Player() {
   useMemo(() => {
     id, session;
   }, [id, session]);
-
-  const customStyles = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      backgroundColor: "#e4f2ff",
-    },
-    overlay: {
-      backgroundColor: "rgba(228, 242, 255, 0.4)",
-      backdropFilter: "blur(8px)",
-    },
-  };
 
   const names = useMemo(() => ["Черепашки", "Черепушки", "Черемушки"], []);
 

@@ -6,9 +6,11 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import css from "./GamePage.module.css";
-import HashLoader from "react-spinners/HashLoader.js";
+// import ModalWinner from "../../components/ModalWinner/ModalWinner.jsx";
+import customStyles from "../../utils/customStyles.js";
+import Loader from "../../components/Loader/Loader.jsx";
 
-export default function Themes() {
+export default function GamePage() {
   const { session } = useParams();
   const navigate = useNavigate();
 
@@ -23,11 +25,14 @@ export default function Themes() {
   const [winnerName, setWinnerName] = useState(null);
   const [winnerPts, setWinnerPts] = useState(null);
   const [socketId, setSocketId] = useState(null);
+  const [allBundles, setAllBundles] = useState(null);
+  const [chosenBundle, setChosenBundle] = useState(null);
 
   const getFileName = (url) => url.split("/").pop().split("_")[0];
 
   const sortedUrls = useMemo(
     () =>
+      frames.length > 0 &&
       [...frames].sort((a, b) => {
         const fileNameA = getFileName(a);
         const fileNameB = getFileName(b);
@@ -43,44 +48,35 @@ export default function Themes() {
     [frames]
   );
 
-  const customStyles = useMemo(
-    () => ({
-      content: {
-        padding: 0,
-        top: "50%",
-        left: "50%",
-        right: "auto",
-        bottom: "auto",
-        marginRight: "-50%",
-        transform: "translate(-50%, -50%)",
-        backgroundColor: "#e4f2ff",
-      },
-      overlay: {
-        backgroundColor: "rgba(228, 242, 255, 0.4)",
-        backdropFilter: "blur(8px)",
-      },
-    }),
-    []
-  );
+  // const customStyles = useMemo(styles, []);
 
   useEffect(() => {
     setTimeout(() => {
       setSocketId(socket.id);
       if (!socket.connected) return;
       socket.emit("game_join_room", session, socketId);
-      socket.emit("get_themes", session);
+      // socket.emit("get_themes", session);
     }, 300);
   }, [socketId, session]);
 
   useEffect(() => {
     if (!session) return;
     // if (!socket.connected) return;
-    socket.on("all_themes", (themes) => setThemes(themes));
+
+    socket.on("all_bundles", (bundles) => setAllBundles(bundles));
+    socket.on("all_themes", (themes, bundleName) => {
+      setThemes(themes);
+      setChosenBundle(bundleName);
+    });
 
     socket.on("all_frames", (frame) => {
       setFrames(frame);
       setIsModalOpen(true);
     });
+
+    // socket.on("start_game", (bundleName) => {
+    //   setChosenBundle(bundleName);
+    // });
 
     socket.on("change_frame", () => setSelectedFrame((prev) => prev + 1));
 
@@ -194,18 +190,19 @@ export default function Themes() {
       </Modal>
 
       <h1 className={css.title}>Страница игры</h1>
-      {scoreTable ? (
+      {chosenBundle !== null ? (
         <>
           <h2 className={css.menuTitle}>Таблица результатов</h2>
           <div className={css.scoreTable}>
-            {scoreTable.map((player) => (
-              <div key={player.name} className={css.playerWrap}>
-                <h3 className={css.playerName}>
-                  {player.name} {player.logo}
-                </h3>
-                <h3 className={css.playerName}>{player.points}</h3>
-              </div>
-            ))}
+            {scoreTable &&
+              scoreTable.map((player) => (
+                <div key={player.name} className={css.playerWrap}>
+                  <h3 className={css.playerName}>
+                    {player.name} {player.logo}
+                  </h3>
+                  <h3 className={css.playerName}>{player.points}</h3>
+                </div>
+              ))}
           </div>
           <h2 className={css.menuTitle}>Выберите тему</h2>
           {Object.keys(themes).length > 0 ? (
@@ -232,32 +229,24 @@ export default function Themes() {
               </div>
             </>
           ) : (
-            <HashLoader
-              size={100}
-              color="#aabbff"
-              speedMultiplier={0.85}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                transform: "rotate(20deg)",
-              }}
-            />
+            <Loader />
           )}
+        </>
+      ) : allBundles ? (
+        <>
+          {" "}
+          <h2 className={css.menuTitle}>Выбор темы</h2>
+          <div className={css.scoreTable}>
+            {allBundles.map((bundle) => (
+              <button key={bundle.name} className={css.themes}>
+                {bundle.name}
+              </button>
+            ))}
+          </div>
         </>
       ) : (
         <div>
-          <HashLoader
-            size={100}
-            color="#aabbff"
-            speedMultiplier={0.85}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "rotate(20deg)",
-            }}
-          />
+          <Loader />
         </div>
       )}
     </div>
