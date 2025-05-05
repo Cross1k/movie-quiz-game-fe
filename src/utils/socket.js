@@ -6,7 +6,6 @@ import { io } from "socket.io-client";
 const SOCKET_URL = "https://movie-quiz-game-fe.onrender.com"; // use it on prod
 // const SOCKET_URL = "http://192.168.88.73:3000";
 // const SOCKET_URL = "http://192.168.3.6:3000";
-// const SOCKET_URL = "https://movie-quiz-be.glitch.me/";
 // Создаем экземпляр Socket.IO клиента
 export const socket = io(SOCKET_URL);
 

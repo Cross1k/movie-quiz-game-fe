@@ -50,10 +50,6 @@ export default function HostPage() {
       setAllBundles(bundles);
     });
 
-    // socket.on("set_bundle", (bundleTitle) => {
-    //   setChosenBundle(bundleTitle);
-    // });
-
     socket.on("end_game", (winner, pts) => {
       setWinnerName(winner);
       setWinnerPts(pts);
@@ -64,7 +60,6 @@ export default function HostPage() {
     });
     return () => {
       socket.off("player_answer");
-      // socket.off("all_themes");
     };
   }, [navigate, session]);
 
