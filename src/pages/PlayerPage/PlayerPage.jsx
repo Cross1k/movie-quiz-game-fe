@@ -22,7 +22,7 @@ export default function Player() {
   const [gameEnd, setGameEnd] = useState(false);
   const [socketId, setSocketId] = useState(null);
 
-  const playerId = useSelector((state) => state.players.players);
+  const player = useSelector((state) => state.players.player);
 
   const dispatch = useDispatch();
 
@@ -37,8 +37,8 @@ export default function Player() {
 
   useEffect(() => {
     setTimeout(() => {
-      setSocketId(socket.id);
-      if (socketId) {
+      dispatch(player);
+      if (player.socketId === null) {
         socket.emit("player_join_room", session, names[id - 1], id, socketId);
         socket.emit("round_request", session);
         socket.emit("who_answer", session);
