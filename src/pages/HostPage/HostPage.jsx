@@ -5,6 +5,8 @@ import Modal from "react-modal";
 import css from "./HostPage.module.css";
 import Loader from "../../components/Loader/Loader.jsx";
 import customStyles from "../../utils/customStyles.js";
+import ModalWinner from "../../components/ModalWinner/ModalWinner.jsx";
+import ModalAnswer from "../../components/ModalAnswer/ModalAnswer.jsx";
 
 export default function HostPage() {
   const [playerName, setPlayerName] = useState(null);
@@ -129,37 +131,13 @@ export default function HostPage() {
     <div className={css.wrap}>
       <h1 className={css.title}>Страница ведущего</h1>
 
-      <Modal isOpen={gameEnd} style={customStyles}>
-        <>
-          <h2>{winnerName}</h2>
-          <h3>Счет: {winnerPts}</h3>
-        </>
-      </Modal>
+      <ModalWinner
+        winnerName={winnerName}
+        winnerPts={winnerPts}
+        gameEnd={gameEnd}
+      />
 
-      <Modal isOpen={isModalOpen} style={customStyles}>
-        {isAnswering ? (
-          <div className={css.modalPlayer}>
-            <h2 className={css.menuTitle}>Имя игрока:</h2>
-            <p className={css.playerName}>{playerName}</p>
-            <div>
-              <button onClick={handleGoodAnswer} className={css.btn}>
-                Верно! 🟢
-              </button>
-              <button onClick={handleBadAnswer} className={css.btn}>
-                Не верно! 🔴
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={handleChangeFrame}
-            className={css.btn}
-            disabled={IsNextFrameButtonDisabled}
-          >
-            Следующий кадр ▶
-          </button>
-        )}
-      </Modal>
+      <ModalAnswer />
 
       {chosenBundle !== null ? (
         <>

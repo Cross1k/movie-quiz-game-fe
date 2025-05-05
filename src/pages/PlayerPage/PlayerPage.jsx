@@ -9,6 +9,7 @@ import css from "./PlayerPage.module.css";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import HashLoader from "react-spinners/HashLoader.js";
 import customStyles from "../../utils/customStyles.js";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function Player() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
@@ -20,6 +21,10 @@ export default function Player() {
   const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
   const [socketId, setSocketId] = useState(null);
+
+  const playerId = useSelector((state) => state.players.players);
+
+  const dispatch = useDispatch();
 
   const { id, session } = useParams();
   const navigate = useNavigate();
