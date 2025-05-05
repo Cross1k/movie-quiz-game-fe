@@ -9,6 +9,7 @@ import css from "./PlayerPage.module.css";
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import HashLoader from "react-spinners/HashLoader.js";
 import customStyles from "../../utils/customStyles.js";
+import Loader from "../../components/Loader/Loader.jsx";
 
 export default function Player() {
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
@@ -138,17 +139,7 @@ export default function Player() {
   if (!socketId) {
     return (
       <div>
-        <HashLoader
-          size={100}
-          color="#aabbff"
-          speedMultiplier={0.85}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "rotate(20deg)",
-          }}
-        />
+        <Loader />
       </div>
     );
   }

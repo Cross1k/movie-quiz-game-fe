@@ -56,7 +56,7 @@ export default function GamePage() {
       if (!socket.connected) return;
       socket.emit("game_join_room", session, socketId);
       // socket.emit("get_themes", session);
-    }, 300);
+    }, 400);
   }, [socketId, session]);
 
   useEffect(() => {
