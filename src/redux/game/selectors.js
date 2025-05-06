@@ -1,0 +1,10 @@
+export const selectAllBundles = (state) => state.game.allBundles;
+export const selectChosenBundle = (state) => state.game.chosenBundle;
+export const selectWhoAnswering = (state) => state.game.whoAnswering;
+export const selectThemes = (state) => state.game.themes;
+export const selectFrames = (state) => state.game.frames;
+export const selectScoreTable = (state) => state.game.scoreTable;
+export const selectWinnerName = (state) => state.game.winnerName;
+export const selectWinnerPts = (state) => state.game.winnerPts;
+export const selectSelectedFrame = (state) => state.game.selectedFrame;
+export const selectPlayerAnswer = (state) => state.game.playerAnswer;

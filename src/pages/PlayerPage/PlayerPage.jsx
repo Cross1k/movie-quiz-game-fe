@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import Confetti from "react-confetti";
 
@@ -10,28 +9,31 @@ import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
 import HashLoader from "react-spinners/HashLoader.js";
 import customStyles from "../../utils/customStyles.js";
 import { useDispatch, useSelector } from "react-redux";
+import { selectModal } from "../../redux/common/selectors.js";
+import { setPlayer } from "../../redux/players/selectors.js";
+import { useNavigate, useParams } from "react-router-dom";
+import { selectStartButton } from "../../redux/host/selectors.js";
+import { startButton } from "../../redux/host/slice.js";
+import { setPlayerAnswer } from "../../redux/game/slice.js";
 
 export default function Player() {
-  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
-  const [playerName, setPlayerName] = useState(null);
-  const [stateAnswer, setStateAnswer] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [myPoints, setMyPoints] = useState(0);
-  const [winnerName, setWinnerName] = useState(null);
-  const [winnerPts, setWinnerPts] = useState(null);
-  const [gameEnd, setGameEnd] = useState(false);
-  const [socketId, setSocketId] = useState(null);
-
-  const player = useSelector((state) => state.players.player);
-
   const dispatch = useDispatch();
-
   const { id, session } = useParams();
   const navigate = useNavigate();
 
-  useMemo(() => {
-    id, session;
-  }, [id, session]);
+  // const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+  // const [playerName, setPlayerName] = useState(null);
+  // const [stateAnswer, setStateAnswer] = useState(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [myPoints, setMyPoints] = useState(0);
+  // const [winnerName, setWinnerName] = useState(null);
+  // const [winnerPts, setWinnerPts] = useState(null);
+  const [gameEnd, setGameEnd] = useState(false);
+  // const [socketId, setSocketId] = useState(null);
+
+  const player = useSelector(setPlayer);
+  const isModalOpen = useSelector(selectModal);
+  const button = useSelector(selectStartButton);
 
   const names = useMemo(() => ["Черепашки", "Черепушки", "Черемушки"], []);
 
@@ -44,66 +46,66 @@ export default function Player() {
         socket.emit("who_answer", session);
       }
     }, 600);
-  }, [id, names, session, socketId]);
+  }, [dispatch, id, names, player, session]);
 
   useEffect(() => {
     socket.on("is_started", (bool) => {
-      setIsButtonDisabled(!bool);
+      dispatch(startButton(!bool)); // button
     });
 
     socket.on("who_answer", (name) => {
       if (name === null) return;
-      setPlayerName(name);
-      setIsButtonDisabled(true);
-      setIsModalOpen(true);
+      dispatch(player.playerName(name));
+      dispatch(startButton(true));
+      dispatch(selectModal(true));
     });
 
     socket.on("player_answer", (id) => {
-      setPlayerName(id);
-      setIsButtonDisabled(true);
-      setIsModalOpen(true);
+      dispatch(player.playerName(id));
+      dispatch(startButton(true));
+      dispatch(selectModal(true));
     });
 
     socket.on("your_points", (pts) => {
-      setMyPoints(pts);
+      dispatch(player.points(pts));
     });
 
     socket.on("answer_yes", () => {
-      setStateAnswer("верно!");
-      setIsButtonDisabled(true);
+      dispatch(setPlayerAnswer("верно!"));
+      dispatch(startButton(true));
       setTimeout(() => {
-        setPlayerName(null);
-        setStateAnswer(null);
-        setIsModalOpen(false);
+        dispatch(player.playerName(null));
+        dispatch(setPlayerAnswer(null));
+        dispatch(selectModal(false));
       }, 6000);
     });
 
     socket.on("answer_no", () => {
-      setStateAnswer("не верно!");
+      dispatch(setPlayerAnswer("не верно!"));
       setTimeout(() => {
-        setPlayerName(null);
-        setStateAnswer(null);
-        setIsModalOpen(false);
+        dispatch(player.playerName(null));
+        dispatch(setPlayerAnswer(null));
+        dispatch(selectModal(false));
       }, 3000);
-      setIsButtonDisabled(false);
+      dispatch(startButton(false));
     });
 
     socket.on("start_round", () => {
-      setIsButtonDisabled(false);
+      dispatch(startButton(false));
     });
 
     socket.on("round_end", () => {
-      setIsButtonDisabled(true);
+      dispatch(startButton(true));
       setTimeout(() => {
-        setPlayerName(null);
-        setStateAnswer(null);
-        setIsModalOpen(false);
+        dispatch(player.playerName(null));
+        dispatch(setPlayerAnswer(null));
+        dispatch(isModalOpen(false));
       }, 3000);
     });
 
     socket.on("end_game", (winner, pts) => {
-      setWinnerName(winner);
-      setWinnerPts(pts);
+      dispatch(setWinnerName(winner));
+      dispatch(setWinnerPts(pts));
       setGameEnd(true);
       setTimeout(() => {
         navigate("/");
@@ -119,7 +121,7 @@ export default function Player() {
       socket.off("start_round");
       socket.off("round_end");
     };
-  }, [id, names, navigate, session]);
+  }, [dispatch, id, isModalOpen, names, navigate, player, session]);
 
   useEffect(() => {
     if (!socket.connected) {
@@ -136,24 +138,14 @@ export default function Player() {
   const handleAnswer = () => {
     if (socketId) {
       socket.emit("player_answer", session, names[id - 1]);
-      setIsButtonDisabled(true);
+      dispatch(isModalOpen(true));
     }
   };
 
   if (!socketId) {
     return (
       <div>
-        <HashLoader
-          size={100}
-          color="#aabbff"
-          speedMultiplier={0.85}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "rotate(20deg)",
-          }}
-        />
+        <Loader />
       </div>
     );
   }
