@@ -6,7 +6,6 @@ import Confetti from "react-confetti";
 import css from "./PlayerPage.module.css";
 
 import { connectSocket, disconnectSocket, socket } from "../../utils/socket.js";
-import HashLoader from "react-spinners/HashLoader.js";
 import customStyles from "../../utils/customStyles.js";
 import { useDispatch, useSelector } from "react-redux";
 import { selectModal } from "../../redux/common/selectors.js";
@@ -15,38 +14,39 @@ import { useNavigate, useParams } from "react-router-dom";
 import { selectStartButton } from "../../redux/host/selectors.js";
 import { startButton } from "../../redux/host/slice.js";
 import { setPlayerAnswer } from "../../redux/game/slice.js";
+import Loader from "../../components/Loader/Loader.jsx";
+import { setPlayerId } from "../../redux/players/slice.js";
 
 export default function Player() {
   const dispatch = useDispatch();
   const { id, session } = useParams();
   const navigate = useNavigate();
 
-  // const [isButtonDisabled, setIsButtonDisabled] = useState(true);
-  // const [playerName, setPlayerName] = useState(null);
-  // const [stateAnswer, setStateAnswer] = useState(null);
-  // const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [myPoints, setMyPoints] = useState(0);
-  // const [winnerName, setWinnerName] = useState(null);
-  // const [winnerPts, setWinnerPts] = useState(null);
   const [gameEnd, setGameEnd] = useState(false);
-  // const [socketId, setSocketId] = useState(null);
 
   const player = useSelector(setPlayer);
   const isModalOpen = useSelector(selectModal);
   const button = useSelector(selectStartButton);
+  const playerName = useSelector((state) => state.players.player.name);
+  const myPoints = useSelector((state) => state.players.player.points);
+  const stateAnswer = useSelector((state) => state.game.playerAnswer);
+  const winnerName = useSelector((state) => state.game.winnerName);
+  const winnerPts = useSelector((state) => state.game.winnerPts);
+  const socketId = useSelector((state) => state.players.player.socketId);
 
   const names = useMemo(() => ["Черепашки", "Черепушки", "Черемушки"], []);
 
   useEffect(() => {
     setTimeout(() => {
-      dispatch(player);
+      dispatch(setPlayerId(socket.id));
+      console.log(player);
       if (player.socketId === null) {
         socket.emit("player_join_room", session, names[id - 1], id, socketId);
         socket.emit("round_request", session);
         socket.emit("who_answer", session);
       }
     }, 600);
-  }, [dispatch, id, names, player, session]);
+  }, [dispatch, id, names, player, session, socketId]);
 
   useEffect(() => {
     socket.on("is_started", (bool) => {
@@ -99,7 +99,7 @@ export default function Player() {
       setTimeout(() => {
         dispatch(player.playerName(null));
         dispatch(setPlayerAnswer(null));
-        dispatch(isModalOpen(false));
+        dispatch(selectModal(false));
       }, 3000);
     });
 
@@ -121,7 +121,7 @@ export default function Player() {
       socket.off("start_round");
       socket.off("round_end");
     };
-  }, [dispatch, id, isModalOpen, names, navigate, player, session]);
+  }, [dispatch, navigate, player]);
 
   useEffect(() => {
     if (!socket.connected) {
@@ -138,7 +138,7 @@ export default function Player() {
   const handleAnswer = () => {
     if (socketId) {
       socket.emit("player_answer", session, names[id - 1]);
-      dispatch(isModalOpen(true));
+      dispatch(selectModal(true));
     }
   };
 
@@ -171,7 +171,7 @@ export default function Player() {
       <button
         type="button"
         onClick={handleAnswer}
-        disabled={isButtonDisabled}
+        disabled={button}
         className={css.btn}
       >
         Я знаю!!! 🔔

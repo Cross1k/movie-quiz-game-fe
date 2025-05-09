@@ -8,11 +8,17 @@ const playerSlice = createSlice({
   name: "players",
   initialState,
   reducers: {
-    setPlayerInfo: (state, action) => {
-      state.player = action.payload;
+    setPlayerId: (state, action) => {
+      state.player.socketId = action.payload;
+    },
+    setPlayerPts: (state, action) => {
+      state.player.points = action.payload;
+    },
+    setPlayerName: (state, action) => {
+      state.player.name = action.payload;
     },
   },
 });
 
 export const playerReducer = playerSlice.reducer;
-export const { setPlayerInfo } = playerSlice.actions;
+export const { setPlayerId, setPlayerName, setPlayerPts } = playerSlice.actions;

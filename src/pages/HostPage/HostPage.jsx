@@ -121,12 +121,13 @@ export default function HostPage() {
     socket.emit("end_game", session);
   };
 
-  if (!socketId)
+  if (!socketId) {
     return (
       <div>
         <Loader />
       </div>
     );
+  }
   return (
     <div className={css.wrap}>
       <h1 className={css.title}>Страница ведущего</h1>
@@ -137,8 +138,30 @@ export default function HostPage() {
         gameEnd={gameEnd}
       />
 
-      <ModalAnswer />
-
+      <Modal isOpen={isModalOpen} style={customStyles}>
+        {isAnswering ? (
+          <div className={css.modalPlayer}>
+            <h2 className={css.menuTitle}>Имя игрока:</h2>
+            <p className={css.playerName}>{playerName}</p>
+            <div>
+              <button onClick={handleGoodAnswer} className={css.btn}>
+                Верно! 🟢
+              </button>
+              <button onClick={handleBadAnswer} className={css.btn}>
+                Не верно! 🔴
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleChangeFrame}
+            className={css.btn}
+            disabled={IsNextFrameButtonDisabled}
+          >
+            Следующий кадр ▶
+          </button>
+        )}
+      </Modal>
       {chosenBundle !== null ? (
         <>
           {themes ? (
